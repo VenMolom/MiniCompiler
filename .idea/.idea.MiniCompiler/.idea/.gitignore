@@ -1,0 +1,13 @@
+﻿# Default ignored files
+/shelf/
+/workspace.xml
+# Rider ignored files
+/modules.xml
+/projectSettingsUpdater.xml
+/.idea.MiniCompiler.iml
+/contentModel.xml
+# Datasource local storage ignored files
+/../../../../../../:\MT\MiniCompiler\.idea\.idea.MiniCompiler\.idea/dataSources/
+/dataSources.local.xml
+# Editor-based HTTP Client requests
+/httpRequests/
