@@ -1,17 +1,4 @@
-﻿program
-    : String
-        {
-            Console.WriteLine($1);
-            Compiler.EmitCode("%ss = store i8* c\"{0}\\0A\\00\")", $1);
-            Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([4 x i8]* @str to i8*), i8* %ss)");
-        }
-    ;
+﻿instruction 
+    : expression_instruction
     
-instruction 
-    : block_instruction
-    | expression_instruction
-    | conditional_instruction
-    | loop_instruction
-    | input_instruction
-    | output_instruction
-    | declaration
+rzutowanie typów

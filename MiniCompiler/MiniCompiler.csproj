@@ -59,13 +59,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
-    <Content Include="Parser.lst" />
-    <Content Include="Parser.report.html" />
     <Content Include="program.mt" />
     <Content Include="program.mt.ll" />
     <Content Include="random.txt" />
     <Content Include="run.cmd" />
-    <Content Include="Scanner.lst" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

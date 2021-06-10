@@ -6,9 +6,9 @@
 //
 //  GPLEX Version:  1.2.2
 //  Machine:  DESKTOP-4T5HHDR
-//  DateTime: 2021-06-09 22:53:50
+//  DateTime: 2021-06-10 21:52:10
 //  UserName: Molom
-//  GPLEX input file <Scanner.lex - 2021-06-09 22:28:30>
+//  GPLEX input file <Scanner.lex - 2021-06-10 20:25:26>
 //  GPLEX frame file <embedded resource>
 //
 //  Option settings: parser, minimize

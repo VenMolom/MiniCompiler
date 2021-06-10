@@ -4,9 +4,9 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-4T5HHDR
-// DateTime: 2021-06-09 22:53:50
+// DateTime: 2021-06-10 21:52:10
 // UserName: Molom
-// Input file <Parser.y - 2021-06-09 22:53:28>
+// Input file <Parser.y - 2021-06-10 21:51:31>
 
 // options: lines gplex
 
@@ -61,62 +61,98 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #pragma warning disable 649
   private static Dictionary<int, string> aliases;
 #pragma warning restore 649
-  private static Rule[] rules = new Rule[33];
-  private static State[] states = new State[48];
+  private static Rule[] rules = new Rule[51];
+  private static State[] states = new State[83];
   private static string[] nonTerms = new string[] {
       "type", "declaration", "exp", "number", "start", "$accept", "programContent", 
       "declarations", "instructions", "Anon@1", "identifiers", "instruction", 
-      "expression_instruction", "output_instruction", };
+      "output_instruction", "input_instruction", "block_instruction", "conditional_instruction", 
+      "loop_instruction", "Anon@2", "Anon@3", "Anon@4", "Anon@5", "Anon@6", };
 
   static Parser() {
-    states[0] = new State(new int[]{4,3,2,46},new int[]{-5,1});
+    states[0] = new State(new int[]{4,3,2,81},new int[]{-5,1});
     states[1] = new State(new int[]{3,2});
     states[2] = new State(-1);
     states[3] = new State(new int[]{36,4});
-    states[4] = new State(new int[]{11,41,12,42,13,43,41,14,42,18,43,19,14,20,15,21,9,23,2,29,40,31},new int[]{-7,5,-8,8,-2,44,-1,34,-9,45,-12,33,-13,11,-3,12,-4,17,-14,22});
+    states[4] = new State(new int[]{11,76,12,77,13,78,9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60,37,-7},new int[]{-7,5,-8,8,-2,79,-1,69,-9,80,-12,67,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
     states[5] = new State(new int[]{37,6});
     states[6] = new State(new int[]{40,7});
     states[7] = new State(-2);
-    states[8] = new State(new int[]{41,14,42,18,43,19,14,20,15,21,9,23,2,29,40,31,11,41,12,42,13,43,37,-5},new int[]{-9,9,-2,32,-12,33,-13,11,-3,12,-4,17,-14,22,-1,34});
-    states[9] = new State(new int[]{41,14,42,18,43,19,14,20,15,21,9,23,2,29,40,31,37,-4},new int[]{-12,10,-13,11,-3,12,-4,17,-14,22});
-    states[10] = new State(-16);
-    states[11] = new State(-18);
-    states[12] = new State(new int[]{39,13});
-    states[13] = new State(-23);
-    states[14] = new State(new int[]{17,15,39,-25,38,-25});
-    states[15] = new State(new int[]{41,14,42,18,43,19,14,20,15,21},new int[]{-3,16,-4,17});
-    states[16] = new State(-24);
-    states[17] = new State(-26);
-    states[18] = new State(-27);
-    states[19] = new State(-28);
-    states[20] = new State(-29);
-    states[21] = new State(-30);
-    states[22] = new State(-19);
-    states[23] = new State(new int[]{41,14,42,18,43,19,14,20,15,21},new int[]{-3,24,-4,17});
-    states[24] = new State(new int[]{39,25,38,26});
-    states[25] = new State(-31);
-    states[26] = new State(new int[]{16,27});
-    states[27] = new State(new int[]{39,28});
-    states[28] = new State(-32);
-    states[29] = new State(new int[]{39,30,41,-21,42,-21,43,-21,14,-21,15,-21,9,-21,2,-21,40,-21,37,-21});
-    states[30] = new State(-20);
-    states[31] = new State(-22);
-    states[32] = new State(-7);
-    states[33] = new State(-17);
-    states[34] = new State(-9,new int[]{-10,35});
-    states[35] = new State(new int[]{41,40},new int[]{-11,36});
-    states[36] = new State(new int[]{39,37,38,38});
-    states[37] = new State(-10);
-    states[38] = new State(new int[]{41,39});
-    states[39] = new State(-14);
-    states[40] = new State(-15);
-    states[41] = new State(-11);
-    states[42] = new State(-12);
-    states[43] = new State(-13);
-    states[44] = new State(-8);
-    states[45] = new State(new int[]{41,14,42,18,43,19,14,20,15,21,9,23,2,29,40,31,37,-6},new int[]{-12,10,-13,11,-3,12,-4,17,-14,22});
-    states[46] = new State(new int[]{40,47});
-    states[47] = new State(-3);
+    states[8] = new State(new int[]{9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60,11,76,12,77,13,78,37,-5},new int[]{-9,9,-2,68,-12,67,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23,-1,69});
+    states[9] = new State(new int[]{9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60,37,-4},new int[]{-12,10,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
+    states[10] = new State(-17);
+    states[11] = new State(-19);
+    states[12] = new State(new int[]{44,18,41,20,42,24,43,25,14,26,15,27},new int[]{-3,13,-4,23});
+    states[13] = new State(new int[]{39,14,38,15});
+    states[14] = new State(-46);
+    states[15] = new State(new int[]{16,16});
+    states[16] = new State(new int[]{39,17});
+    states[17] = new State(-47);
+    states[18] = new State(new int[]{39,19});
+    states[19] = new State(-48);
+    states[20] = new State(new int[]{17,21,39,-40,38,-40,35,-40});
+    states[21] = new State(new int[]{41,20,42,24,43,25,14,26,15,27},new int[]{-3,22,-4,23});
+    states[22] = new State(-39);
+    states[23] = new State(-41);
+    states[24] = new State(-42);
+    states[25] = new State(-43);
+    states[26] = new State(-44);
+    states[27] = new State(-45);
+    states[28] = new State(-20);
+    states[29] = new State(new int[]{41,30});
+    states[30] = new State(new int[]{39,31,38,32});
+    states[31] = new State(-49);
+    states[32] = new State(new int[]{16,33});
+    states[33] = new State(new int[]{39,34});
+    states[34] = new State(-50);
+    states[35] = new State(-21);
+    states[36] = new State(new int[]{37,66,9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60},new int[]{-9,37,-12,67,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
+    states[37] = new State(new int[]{37,38,9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60},new int[]{-12,10,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
+    states[38] = new State(-37);
+    states[39] = new State(-22);
+    states[40] = new State(new int[]{34,41});
+    states[41] = new State(new int[]{41,20,42,24,43,25,14,26,15,27},new int[]{-3,42,-4,23});
+    states[42] = new State(new int[]{35,43});
+    states[43] = new State(-29,new int[]{-18,44,-19,61});
+    states[44] = new State(new int[]{9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60},new int[]{-12,45,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
+    states[45] = new State(-30);
+    states[46] = new State(-23);
+    states[47] = new State(new int[]{34,48});
+    states[48] = new State(-34,new int[]{-21,49});
+    states[49] = new State(new int[]{41,20,42,24,43,25,14,26,15,27},new int[]{-3,50,-4,23});
+    states[50] = new State(new int[]{35,51});
+    states[51] = new State(-35,new int[]{-22,52});
+    states[52] = new State(new int[]{9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60},new int[]{-12,53,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
+    states[53] = new State(-36);
+    states[54] = new State(new int[]{39,55});
+    states[55] = new State(-24);
+    states[56] = new State(new int[]{39,57});
+    states[57] = new State(-25);
+    states[58] = new State(new int[]{39,59,9,-27,8,-27,36,-27,5,-27,7,-27,41,-27,42,-27,43,-27,14,-27,15,-27,10,-27,2,-27,40,-27,37,-27,6,-27});
+    states[59] = new State(-26);
+    states[60] = new State(-28);
+    states[61] = new State(new int[]{9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60},new int[]{-12,62,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
+    states[62] = new State(new int[]{6,63});
+    states[63] = new State(-32,new int[]{-20,64});
+    states[64] = new State(new int[]{9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60},new int[]{-12,65,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
+    states[65] = new State(-33);
+    states[66] = new State(-38);
+    states[67] = new State(-18);
+    states[68] = new State(-8);
+    states[69] = new State(-10,new int[]{-10,70});
+    states[70] = new State(new int[]{41,75},new int[]{-11,71});
+    states[71] = new State(new int[]{39,72,38,73});
+    states[72] = new State(-11);
+    states[73] = new State(new int[]{41,74});
+    states[74] = new State(-15);
+    states[75] = new State(-16);
+    states[76] = new State(-12);
+    states[77] = new State(-13);
+    states[78] = new State(-14);
+    states[79] = new State(-9);
+    states[80] = new State(new int[]{9,12,8,29,36,36,5,40,7,47,41,20,42,24,43,25,14,26,15,27,10,56,2,58,40,60,37,-6},new int[]{-12,10,-13,11,-14,28,-15,35,-16,39,-17,46,-3,54,-4,23});
+    states[81] = new State(new int[]{40,82});
+    states[82] = new State(-3);
 
     for (int sNo = 0; sNo < states.Length; sNo++) states[sNo].number = sNo;
 
@@ -126,32 +162,50 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     rules[4] = new Rule(-7, new int[]{-8,-9});
     rules[5] = new Rule(-7, new int[]{-8});
     rules[6] = new Rule(-7, new int[]{-9});
-    rules[7] = new Rule(-8, new int[]{-8,-2});
-    rules[8] = new Rule(-8, new int[]{-2});
-    rules[9] = new Rule(-10, new int[]{});
-    rules[10] = new Rule(-2, new int[]{-1,-10,-11,39});
-    rules[11] = new Rule(-1, new int[]{11});
-    rules[12] = new Rule(-1, new int[]{12});
-    rules[13] = new Rule(-1, new int[]{13});
-    rules[14] = new Rule(-11, new int[]{-11,38,41});
-    rules[15] = new Rule(-11, new int[]{41});
-    rules[16] = new Rule(-9, new int[]{-9,-12});
-    rules[17] = new Rule(-9, new int[]{-12});
-    rules[18] = new Rule(-12, new int[]{-13});
-    rules[19] = new Rule(-12, new int[]{-14});
-    rules[20] = new Rule(-12, new int[]{2,39});
-    rules[21] = new Rule(-12, new int[]{2});
-    rules[22] = new Rule(-12, new int[]{40});
-    rules[23] = new Rule(-13, new int[]{-3,39});
-    rules[24] = new Rule(-3, new int[]{41,17,-3});
-    rules[25] = new Rule(-3, new int[]{41});
-    rules[26] = new Rule(-3, new int[]{-4});
-    rules[27] = new Rule(-4, new int[]{42});
-    rules[28] = new Rule(-4, new int[]{43});
-    rules[29] = new Rule(-4, new int[]{14});
-    rules[30] = new Rule(-4, new int[]{15});
-    rules[31] = new Rule(-14, new int[]{9,-3,39});
-    rules[32] = new Rule(-14, new int[]{9,-3,38,16,39});
+    rules[7] = new Rule(-7, new int[]{});
+    rules[8] = new Rule(-8, new int[]{-8,-2});
+    rules[9] = new Rule(-8, new int[]{-2});
+    rules[10] = new Rule(-10, new int[]{});
+    rules[11] = new Rule(-2, new int[]{-1,-10,-11,39});
+    rules[12] = new Rule(-1, new int[]{11});
+    rules[13] = new Rule(-1, new int[]{12});
+    rules[14] = new Rule(-1, new int[]{13});
+    rules[15] = new Rule(-11, new int[]{-11,38,41});
+    rules[16] = new Rule(-11, new int[]{41});
+    rules[17] = new Rule(-9, new int[]{-9,-12});
+    rules[18] = new Rule(-9, new int[]{-12});
+    rules[19] = new Rule(-12, new int[]{-13});
+    rules[20] = new Rule(-12, new int[]{-14});
+    rules[21] = new Rule(-12, new int[]{-15});
+    rules[22] = new Rule(-12, new int[]{-16});
+    rules[23] = new Rule(-12, new int[]{-17});
+    rules[24] = new Rule(-12, new int[]{-3,39});
+    rules[25] = new Rule(-12, new int[]{10,39});
+    rules[26] = new Rule(-12, new int[]{2,39});
+    rules[27] = new Rule(-12, new int[]{2});
+    rules[28] = new Rule(-12, new int[]{40});
+    rules[29] = new Rule(-18, new int[]{});
+    rules[30] = new Rule(-16, new int[]{5,34,-3,35,-18,-12});
+    rules[31] = new Rule(-19, new int[]{});
+    rules[32] = new Rule(-20, new int[]{});
+    rules[33] = new Rule(-16, new int[]{5,34,-3,35,-19,-12,6,-20,-12});
+    rules[34] = new Rule(-21, new int[]{});
+    rules[35] = new Rule(-22, new int[]{});
+    rules[36] = new Rule(-17, new int[]{7,34,-21,-3,35,-22,-12});
+    rules[37] = new Rule(-15, new int[]{36,-9,37});
+    rules[38] = new Rule(-15, new int[]{36,37});
+    rules[39] = new Rule(-3, new int[]{41,17,-3});
+    rules[40] = new Rule(-3, new int[]{41});
+    rules[41] = new Rule(-3, new int[]{-4});
+    rules[42] = new Rule(-4, new int[]{42});
+    rules[43] = new Rule(-4, new int[]{43});
+    rules[44] = new Rule(-4, new int[]{14});
+    rules[45] = new Rule(-4, new int[]{15});
+    rules[46] = new Rule(-13, new int[]{9,-3,39});
+    rules[47] = new Rule(-13, new int[]{9,-3,38,16,39});
+    rules[48] = new Rule(-13, new int[]{9,44,39});
+    rules[49] = new Rule(-14, new int[]{8,41,39});
+    rules[50] = new Rule(-14, new int[]{8,41,38,16,39});
   }
 
   protected override void Initialize() {
@@ -182,64 +236,160 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         }
 #line default
         break;
-      case 9: // Anon@1 -> /* empty */
-#line 48 "Parser.y"
+      case 10: // Anon@1 -> /* empty */
+#line 49 "Parser.y"
         {
             identifiersType = ValueStack[ValueStack.Depth-1].type;
         }
 #line default
         break;
-      case 11: // type -> Int
-#line 56 "Parser.y"
+      case 12: // type -> Int
+#line 57 "Parser.y"
         { CurrentSemanticValue.type = TypeEnum.Int; }
 #line default
         break;
-      case 12: // type -> Double
-#line 58 "Parser.y"
+      case 13: // type -> Double
+#line 59 "Parser.y"
         { CurrentSemanticValue.type = TypeEnum.Double; }
 #line default
         break;
-      case 13: // type -> Bool
-#line 60 "Parser.y"
+      case 14: // type -> Bool
+#line 61 "Parser.y"
         { CurrentSemanticValue.type = TypeEnum.Bool; }
 #line default
         break;
-      case 14: // identifiers -> identifiers, Comma, Ident
-#line 65 "Parser.y"
+      case 15: // identifiers -> identifiers, Comma, Ident
+#line 66 "Parser.y"
         { Declare(ValueStack[ValueStack.Depth-1].val, identifiersType, LocationStack[LocationStack.Depth-1]); }
 #line default
         break;
-      case 15: // identifiers -> Ident
-#line 67 "Parser.y"
+      case 16: // identifiers -> Ident
+#line 68 "Parser.y"
         { Declare(ValueStack[ValueStack.Depth-1].val, identifiersType, LocationStack[LocationStack.Depth-1]); }
 #line default
         break;
-      case 20: // instruction -> error, Endline
-#line 79 "Parser.y"
+      case 25: // instruction -> Return, Endline
+#line 84 "Parser.y"
+        {
+            Compiler.EmitCode("ret i32 0");
+        }
+#line default
+        break;
+      case 26: // instruction -> error, Endline
+#line 88 "Parser.y"
         {
             Error(LocationStack[LocationStack.Depth-2]);
             yyerrok();
         }
 #line default
         break;
-      case 21: // instruction -> error
-#line 84 "Parser.y"
+      case 27: // instruction -> error
+#line 93 "Parser.y"
         {
             Error(LocationStack[LocationStack.Depth-1]);
             yyerrok();
         }
 #line default
         break;
-      case 22: // instruction -> Eof
-#line 89 "Parser.y"
+      case 28: // instruction -> Eof
+#line 98 "Parser.y"
         {
             Error(LocationStack[LocationStack.Depth-1], "syntax error - unexpected end of file");
-            YYAccept();
+            YYAbort();
         }
 #line default
         break;
-      case 24: // exp -> Ident, Assign, exp
-#line 101 "Parser.y"
+      case 29: // Anon@2 -> /* empty */
+#line 106 "Parser.y"
+        {
+            if (ValueStack[ValueStack.Depth-2].exp.Type != TypeEnum.Bool)
+            {
+                Error(LocationStack[LocationStack.Depth-2], "condition needs to be of type bool");
+                return;
+            }
+        
+            var truelab = Compiler.NewLabel();
+            var falselab = Compiler.NewLabel();
+            var endlab = Compiler.NewLabel();
+            
+            Compiler.EmitCode("br i1 {0}, label %{1}, label %{2}", ValueStack[ValueStack.Depth-2].exp.Identifier, truelab, falselab);
+            Compiler.EmitCode("{0}:", truelab);
+        }
+#line default
+        break;
+      case 30: // conditional_instruction -> If, OpenPar, exp, ClosePar, Anon@2, instruction
+#line 121 "Parser.y"
+        {
+            Compiler.EmitCode("br label %{0}", endlab);
+            Compiler.EmitCode("{0}:", endlab); 
+        }
+#line default
+        break;
+      case 31: // Anon@3 -> /* empty */
+#line 126 "Parser.y"
+        {
+            var truelab = Compiler.NewLabel();
+            var falselab = Compiler.NewLabel();
+            var endlab = Compiler.NewLabel();
+            
+            Compiler.EmitCode("br i1 {0}, label %{1}, label %{2}", ValueStack[ValueStack.Depth-2].exp.Identifier, truelab, falselab);
+            Compiler.EmitCode("{0}:", truelab);
+        }
+#line default
+        break;
+      case 32: // Anon@4 -> /* empty */
+#line 135 "Parser.y"
+        {
+            Compiler.EmitCode("br label %{0}", endlab);
+            Compiler.EmitCode("{0}:", falselab);
+        }
+#line default
+        break;
+      case 33: // conditional_instruction -> If, OpenPar, exp, ClosePar, Anon@3, instruction, 
+               //                            Else, Anon@4, instruction
+#line 140 "Parser.y"
+        {
+            Compiler.EmitCode("br label %{0}", endlab);
+            Compiler.EmitCode("{0}:", endlab); 
+        }
+#line default
+        break;
+      case 34: // Anon@5 -> /* empty */
+#line 148 "Parser.y"
+        {
+            var startlab = Compiler.NewLabel();
+            var innerlab = Compiler.NewLabel();
+            var endlab = Compiler.NewLabel();
+            
+            Compiler.EmitCode("br label %{0}", startlab);
+            Compiler.EmitCode("{0}:", startlab); 
+        }
+#line default
+        break;
+      case 35: // Anon@6 -> /* empty */
+#line 157 "Parser.y"
+        {
+            if (ValueStack[ValueStack.Depth-3].Type != TypeEnum.Bool)
+            {
+                Error(LocationStack[LocationStack.Depth-3], "condition needs to be of type bool");
+                return;
+            }
+            
+            Compiler.EmitCode("br i1 {0}, label %{1}, label %{2}", ValueStack[ValueStack.Depth-3].Identifier, innerlab, endlab);
+            Compiler.EmitCode("{0}:", innerlab);
+        }
+#line default
+        break;
+      case 36: // loop_instruction -> While, OpenPar, Anon@5, exp, ClosePar, Anon@6, instruction
+#line 168 "Parser.y"
+        {
+            Compiler.EmitCode("br label %{0}", startlab);
+            Compiler.EmitCode("{0}:", endlab);
+        }
+#line default
+        break;
+      case 39: // exp -> Ident, Assign, exp
+#line 181 "Parser.y"
         {
             var typeNullable = GetIdentifierType(ValueStack[ValueStack.Depth-3].val, LocationStack[LocationStack.Depth-3]);
             if (!typeNullable.HasValue) { return; }
@@ -269,8 +419,8 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         }
 #line default
         break;
-      case 25: // exp -> Ident
-#line 129 "Parser.y"
+      case 40: // exp -> Ident
+#line 209 "Parser.y"
         {
             var typeNullable = GetIdentifierType(ValueStack[ValueStack.Depth-1].val, LocationStack[LocationStack.Depth-1]);
             if (!typeNullable.HasValue) { return; }
@@ -282,43 +432,43 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         }
 #line default
         break;
-      case 27: // number -> IntNumber
-#line 143 "Parser.y"
+      case 42: // number -> IntNumber
+#line 223 "Parser.y"
         {
             CurrentSemanticValue.exp = new Exp(ValueStack[ValueStack.Depth-1].val, TypeEnum.Int);
         }
 #line default
         break;
-      case 28: // number -> DoubleNumber
-#line 147 "Parser.y"
+      case 43: // number -> DoubleNumber
+#line 227 "Parser.y"
         {
             CurrentSemanticValue.exp = new Exp(ValueStack[ValueStack.Depth-1].val, TypeEnum.Double);
         }
 #line default
         break;
-      case 29: // number -> True
-#line 151 "Parser.y"
+      case 44: // number -> True
+#line 231 "Parser.y"
         {
             CurrentSemanticValue.exp = new Exp("1", TypeEnum.Bool);
         }
 #line default
         break;
-      case 30: // number -> False
-#line 155 "Parser.y"
+      case 45: // number -> False
+#line 235 "Parser.y"
         {
             CurrentSemanticValue.exp = new Exp("0", TypeEnum.Bool);
         }
 #line default
         break;
-      case 31: // output_instruction -> Write, exp, Endline
-#line 162 "Parser.y"
+      case 46: // output_instruction -> Write, exp, Endline
+#line 242 "Parser.y"
         {
             Print(ValueStack[ValueStack.Depth-2].exp.Identifier, ValueStack[ValueStack.Depth-2].exp.Type);
         }
 #line default
         break;
-      case 32: // output_instruction -> Write, exp, Comma, Hex, Endline
-#line 166 "Parser.y"
+      case 47: // output_instruction -> Write, exp, Comma, Hex, Endline
+#line 246 "Parser.y"
         {
             if (ValueStack[ValueStack.Depth-4].exp.Type != TypeEnum.Int) 
             {
@@ -327,6 +477,47 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
             }
             
             PrintHex(ValueStack[ValueStack.Depth-4].exp.Identifier);
+        }
+#line default
+        break;
+      case 48: // output_instruction -> Write, String, Endline
+#line 256 "Parser.y"
+        {
+            PrintString(ValueStack[ValueStack.Depth-2].val);
+        }
+#line default
+        break;
+      case 49: // input_instruction -> Read, Ident, Endline
+#line 263 "Parser.y"
+        {
+            var typeNullable = GetIdentifierType(ValueStack[ValueStack.Depth-2].val, LocationStack[LocationStack.Depth-2]);
+            if (!typeNullable.HasValue) { return; }
+            
+            var type = typeNullable.Value;
+            if (type == TypeEnum.Bool)
+            {
+                Error(LocationStack[LocationStack.Depth-2], "cannot read into bool");
+                return;
+            }
+        
+            Read(ValueStack[ValueStack.Depth-2].val, type);
+        }
+#line default
+        break;
+      case 50: // input_instruction -> Read, Ident, Comma, Hex, Endline
+#line 277 "Parser.y"
+        {
+            var typeNullable = GetIdentifierType(ValueStack[ValueStack.Depth-4].val, LocationStack[LocationStack.Depth-4]);
+            if (!typeNullable.HasValue) { return; }
+            
+            var type = typeNullable.Value;
+            if (type != TypeEnum.Int) 
+            {
+                Error(LocationStack[LocationStack.Depth-4], "variable must be int to be read as hex");
+                return;
+            }
+            
+            ReadHex(ValueStack[ValueStack.Depth-4].val);
         }
 #line default
         break;
@@ -344,7 +535,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         return CharToString((char)terminal);
   }
 
-#line 178 "Parser.y"
+#line 293 "Parser.y"
 
 private TypeEnum identifiersType;
 
@@ -356,51 +547,94 @@ private void Error(LexLocation location, string text = "syntax error")
 
 private void Declare(string identifier, TypeEnum type, LexLocation location)
 {
-    if (Compiler.Identifiers.ContainsKey(identifier))
+    if (Compiler.Symbols.ContainsKey(identifier))
     {
         Error(location, "variable already declared");
         return;
     }
     
-    Compiler.Identifiers.Add(identifier, type);
+    Compiler.Symbols.Add(identifier, type);
     Alloca(identifier, type);
 }
 
 private TypeEnum? GetIdentifierType(string identifier, LexLocation location)
 {
-    if (!Compiler.Identifiers.ContainsKey(identifier))
+    if (!Compiler.Symbols.ContainsKey(identifier))
     {
         Error(location, "undeclared variable");
+        return null;
     }
     
-    return Compiler.Identifiers[identifier];
+    return Compiler.Symbols[identifier];
 }
 
 private void Load(string target, string source, TypeEnum type)
 {
-    Compiler.EmitCode("{0} = load {1}, {1}* {2}", target, type.LLVMType(), source);
+    Compiler.EmitCode("{0} = load {1}, {1}* {2}", target, type.LlvmType(), source);
 }
 
 private void Alloca(string identifier, TypeEnum type)
 {
-    Compiler.EmitCode("{0} = alloca {1}", identifier, type.LLVMType());
+    Compiler.EmitCode("{0} = alloca {1}", identifier, type.LlvmType());
 }
 
 private void Store(string target, string source, TypeEnum type)
 {
-    Compiler.EmitCode("store {1} {0}, {1}* {2}", source, type.LLVMType(), target);
+    Compiler.EmitCode("store {1} {0}, {1}* {2}", source, type.LlvmType(), target);
 }
 
 private void Print(string value, TypeEnum type)
 {
-    var length = type == TypeEnum.Double ? 5 : 4;
+    if (type == TypeEnum.Bool)
+    {
+        PrintBool(value);
+        return;
+    }
+
+    var length = type == TypeEnum.Double ? 4 : 3;
     Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([{1} x i8]* @{0} to i8*), {0} {2})", 
-        type.LLVMType(), length, value);
+        type.LlvmType(), length, value);
+}
+
+private void PrintBool(string value)
+{
+    var truelab = Compiler.NewLabel();
+    var falselab = Compiler.NewLabel();
+    var endlab = Compiler.NewLabel();
+    Compiler.EmitCode("br i1 {0}, label %{1}, label %{2}", value, truelab, falselab);
+    Compiler.EmitCode("{0}:", truelab);
+    Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([5 x i8]* @true to i8*))");
+    Compiler.EmitCode("br label %{0}", endlab);
+    Compiler.EmitCode("{0}:", falselab);
+    Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([6 x i8]* @false to i8*))");
+    Compiler.EmitCode("br label %{0}", endlab);
+    Compiler.EmitCode("{0}:", endlab);
 }
 
 private void PrintHex(string value)
 {
     Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([6 x i8]* @hex to i8*), i32 {0})",value);
+}
+
+private void PrintString(string value)
+{
+    // TODO: ogarn�?�? t�? funkcj�? by dzia�?a�?o
+    var temp = "@asd";
+    var length = value.Length + 2;
+    Compiler.EmitCode("{0} = constant [{1} x i8] c\"{2}\\0A\\00\"", temp, length, value);
+    Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([{0} x i8]* {1} to i8*))", length, temp);
+}
+
+private void Read(string identifier, TypeEnum type)
+{
+    var length = type == TypeEnum.Double ? 4 : 3;
+        Compiler.EmitCode("call i32 (i8*, ...) @scanf(i8* bitcast ([{1} x i8]* @{0} to i8*), {0}* {2})", 
+            type.LlvmType(), length, identifier);
+}
+
+private void ReadHex(string identifier)
+{
+        Compiler.EmitCode("call i32 (i8*, ...) @scanf(i8* bitcast ([3 x i8]* @hexread to i8*), i32* {0})", identifier);
 }
 
 public Parser(Scanner scanner) : base(scanner) { }
