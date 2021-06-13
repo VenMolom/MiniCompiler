@@ -1,4 +1,3 @@
 program {
-    double a;
-    { write a; }
+    write "sdasd\ntasdsd";
 }

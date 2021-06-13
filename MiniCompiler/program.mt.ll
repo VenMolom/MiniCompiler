@@ -6,16 +6,15 @@
 @true = constant [5 x i8] c"True\00"
 @false = constant [6 x i8] c"False\00"
 
+@__1 = constant [13 x i8] c"sdasd\0Atasdsd\00"
+
 declare i32 @printf(i8*, ...)
 declare i32 @scanf(i8*, ...)
 
 define i32 @main()
 {
 
-%a = alloca double
-ret i32 0
-%__1 = load double, double* %a
-call i32 (i8*, ...) @printf(i8* bitcast ([4 x i8]* @double to i8*), double %__1)
+call i32 (i8*, ...) @printf(i8* bitcast ([13 x i8]* @__1 to i8*))
 
 ret i32 0
 }

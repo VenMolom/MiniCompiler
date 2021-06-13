@@ -2,19 +2,22 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Security;
+using System.Security.Cryptography;
 using QUT.Gppg;
 
 namespace MiniCompiler
 { 
     public static class Compiler
     {
-        public static int Errors = 0;
         public static readonly Dictionary<string, TypeEnum> Symbols = new Dictionary<string, TypeEnum>();
-        public static readonly List<string> StringLiterals = new List<string>();
+        public static readonly Dictionary<string, (string ident, int length)> StringLiterals =
+            new Dictionary<string, (string, int)>();
         public static SyntaxTree Program = null;
 
         private static StreamWriter sw;
         private static int temps = 0;
+        private static int errors = 0;
 
         public static int Main(string[] args)
         {
@@ -46,29 +49,43 @@ namespace MiniCompiler
             Parser parser = new Parser(scanner);
             
             sw = new StreamWriter(file + ".ll");
-            parser.Parse();
 
-            if (Errors == 0 && Program != null)
+            try
+            {
+                parser.Parse();
+            }
+            catch
+            {
+                sw.Close();
+                source.Close();
+                Console.WriteLine($"\n{errors} errors detected\n");
+                File.Delete(file + ".ll");
+                return 2;
+            }
+
+            if (errors == 0 && Program != null)
             {   
                 GenProlog();
-                
                 Program.GenerateCode();
                 sw.Close();
                 source.Close();
             }
 
-            if (Errors != 0)
+            if (errors != 0)
             {
-                Console.WriteLine($"\n  {Errors} errors detected\n");
+                sw.Close();
+                source.Close();
+                Console.WriteLine($"\n{errors} errors detected\n");
                 File.Delete(file + ".ll");
                 return 2;
             }
             return 0;
         }
 
-        public static string NewTemp()
+        public static string NewTemp(bool label = false)
         {
-            return $"__{++temps}";
+            var prefix = label ? string.Empty : "%";
+            return $"{prefix}__{++temps}";
         }
 
         public static void EmitCode(string instr = null)
@@ -79,7 +96,12 @@ namespace MiniCompiler
         public static void Error(LexLocation location, string text = "syntax error")
         {
             Console.WriteLine($"Error ({location.StartLine},{location.StartColumn}): {text}");
-            Errors++;
+            errors++;
+        }
+
+        public static void AddLiteral(string literal, int lengthModif)
+        {
+            StringLiterals.Add(literal, (NewTemp(true), literal.Length + lengthModif + 1));
         }
 
         private static void GenProlog()
@@ -93,9 +115,10 @@ namespace MiniCompiler
             EmitCode("@false = constant [6 x i8] c\"False\\00\"");
             EmitCode();
 
-            foreach (var literal in StringLiterals)
+            foreach (var stringLiteral in StringLiterals)
             {
-                EmitCode($"@__{literal} = constant [{literal.Length + 1} x i8] c\"{literal}\\00\"");
+                EmitCode($"@{stringLiteral.Value.ident} = constant [{stringLiteral.Value.length} x i8] " +
+                         $"c\"{stringLiteral.Key}\\00\"");
             }
             
             EmitCode();
@@ -141,6 +164,16 @@ namespace MiniCompiler
         }
 
         public abstract void GenerateCode();
+        
+        protected void Load(string source)
+        {
+            Compiler.EmitCode($"{Identifier} = load {Type.LlvmType()}, {Type.LlvmType()}* {source}");
+        }
+
+        protected void Store(string source, string target)
+        {
+            Compiler.EmitCode($"store {Type.LlvmType()} {source}, {Type.LlvmType()}* {target}");
+        }
     }
 
     public class Program : SyntaxTree
@@ -192,7 +225,6 @@ namespace MiniCompiler
 
         public override void GenerateCode()
         {
-            return;
         }
     }
 
@@ -264,20 +296,17 @@ namespace MiniCompiler
                 return;
             }
             
-            var truelab = Compiler.NewTemp();
-            var falselab = Compiler.NewTemp();
-            var endlab = Compiler.NewTemp();
+            var truelab = Compiler.NewTemp(true);
+            var falselab = Compiler.NewTemp(true);
+            var endlab = Compiler.NewTemp(true);
             
             condition.GenerateCode();
-            Compiler.EmitCode($"br i1 %{condition?.Identifier}, label %{truelab}, label %{falselab}");
+            Compiler.EmitCode($"br i1 {condition?.Identifier}, label %{truelab}, label %{falselab}");
             Compiler.EmitCode($"{truelab}:");
             thenInstruction?.GenerateCode();
-            if (elseInstruction != null)
-            {
-                Compiler.EmitCode($"br label %{endlab}");
-                Compiler.EmitCode($"{falselab}:");
-                elseInstruction.GenerateCode();
-            }
+            Compiler.EmitCode($"br label %{endlab}");
+            Compiler.EmitCode($"{falselab}:");
+            elseInstruction?.GenerateCode();
             Compiler.EmitCode($"br label %{endlab}");
             Compiler.EmitCode($"{endlab}:");
         }
@@ -302,14 +331,14 @@ namespace MiniCompiler
                 return;
             }
             
-            var startlab = Compiler.NewTemp();
-            var innerlab = Compiler.NewTemp();
-            var endlab = Compiler.NewTemp();
+            var startlab = Compiler.NewTemp(true);
+            var innerlab = Compiler.NewTemp(true);
+            var endlab = Compiler.NewTemp(true);
             
             Compiler.EmitCode($"br label %{startlab}");
             Compiler.EmitCode($"{startlab}:");
             condition.GenerateCode();
-            Compiler.EmitCode($"br i1 %{condition?.Identifier}, label %{innerlab}, label %{endlab}");
+            Compiler.EmitCode($"br i1 {condition?.Identifier}, label %{innerlab}, label %{endlab}");
             Compiler.EmitCode($"{innerlab}:");
             instruction?.GenerateCode();
             Compiler.EmitCode($"br label %{startlab}");
@@ -329,6 +358,216 @@ namespace MiniCompiler
         public override void GenerateCode()
         {
             instructions?.ForEach(instruction => instruction?.GenerateCode());
+        }
+    }
+    
+    public class OutputInstruction : SyntaxTree
+    {
+        private readonly SyntaxTree expression;
+        private readonly Flag flag;
+        private readonly string literal;
+        
+        public OutputInstruction(SyntaxTree expression, Flag flag, LexLocation location) : base(location)
+        {
+            this.expression = expression;
+            this.flag = flag;
+        }
+
+        public OutputInstruction(string literal, LexLocation location) : base(location)
+        {
+            this.literal = literal;
+        }
+
+        public override void GenerateCode()
+        {
+            expression?.GenerateCode();
+
+            if (expression == null && !string.IsNullOrEmpty(literal))
+            {
+                var (ident, length) = Compiler.StringLiterals[literal];
+                PrintString(ident, length);
+                return;
+            }
+
+            if (expression == null)
+            {
+                return;
+            }
+            
+            switch (flag)
+            {
+                case Flag.None:
+                    if (expression.Type == TypeEnum.Bool)
+                    {
+                        PrintBool();
+                        return;
+                    }
+
+                    var length = expression.Type == TypeEnum.Double ? 4 : 3;
+                    Print(length);
+                    break;
+                case Flag.Hex:
+                    if (expression.Type != TypeEnum.Int)
+                    {
+                        Compiler.Error(expression.Location, "variable must be int to be printed as hex");
+                        return;
+                    }
+
+                    Print(6, "hex");
+                    break;
+            }
+        }
+
+        private void Print(int length, string format = null)
+        {
+            Compiler.EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([{length} x i8]* " +
+                              $"@{format ?? expression.Type.LlvmType()} to i8*)" +
+                              $", {expression.Type.LlvmType()} {expression.Identifier})");
+        }
+        private void PrintBool()
+        {
+            var truelab = Compiler.NewTemp(true);
+            var falselab = Compiler.NewTemp(true);
+            var endlab = Compiler.NewTemp(true);
+            
+            Compiler.EmitCode($"br i1 {expression.Identifier}, label %{truelab}, label %{falselab}");
+            Compiler.EmitCode($"{truelab}:");
+            Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([5 x i8]* @true to i8*))");
+            Compiler.EmitCode($"br label %{endlab}");
+            Compiler.EmitCode($"{falselab}:");
+            Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([6 x i8]* @false to i8*))");
+            Compiler.EmitCode($"br label %{endlab}");
+            Compiler.EmitCode($"{endlab}:");
+        }
+
+        private void PrintString(string identifier, int length)
+        {
+            Compiler.EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([{length} x i8]* " +
+                              $"@{identifier} to i8*))");
+        }
+
+        public enum Flag
+        {
+            Hex, None
+        }
+    }
+
+    public class InputInstruction : SyntaxTree
+    {
+        private readonly SyntaxTree identifier;
+        private readonly bool hex;
+        
+        public InputInstruction(SyntaxTree identifier, bool hex, LexLocation location) : base(location)
+        {
+            this.identifier = identifier;
+            this.hex = hex;
+        }
+
+        public override void GenerateCode()
+        {
+            if (!Compiler.Symbols.ContainsKey(identifier.Identifier))
+            {
+                Compiler.Error(identifier.Location, "undeclared variable");
+                return;
+            }
+
+            var type = Compiler.Symbols[identifier.Identifier];
+            if (hex)
+            {
+                if (type != TypeEnum.Int)
+                {
+                    Compiler.Error(Location, "variable must be int to be read as hex");
+                    return;
+                }
+                
+                Read(TypeEnum.Int.LlvmType(), 3, "hexread");
+            }
+            
+            if (type == TypeEnum.Bool)
+            {
+                Compiler.Error(Location, "cannot read into bool");
+                return;
+            }
+            
+            var length = type == TypeEnum.Double ? 4 : 3;
+            Read(type.LlvmType(), length);
+        }
+        
+        private void Read(string type, int length, string format = null)
+        {
+            Compiler.EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([{length} x i8]* " +
+                              $"@{format ?? type} to i8*)" +
+                              $", {type}* {identifier.Identifier})");
+        }
+    }
+
+    public class IdentifierExpression : SyntaxTree
+    {
+        private readonly string identifier;
+
+        public IdentifierExpression(string identifier, LexLocation location) : base(location)
+        {
+            this.identifier = identifier;
+        }
+
+        public override void GenerateCode()
+        {
+            if (!Compiler.Symbols.ContainsKey(identifier))
+            {
+                Compiler.Error(Location, "undeclared variable");
+                return;
+            }
+
+            Type = Compiler.Symbols[identifier];
+            Identifier = Compiler.NewTemp();
+            Load(identifier);
+        }
+    }
+    
+    public class AssignmentExpression : SyntaxTree
+    {
+        private readonly string identifier;
+        private readonly SyntaxTree expression;
+
+        public AssignmentExpression(string identifier, SyntaxTree expression, LexLocation location) : base(location)
+        {
+            this.identifier = identifier;
+            this.expression = expression;
+        }
+
+        public override void GenerateCode()
+        {
+            expression?.GenerateCode();
+            
+            if (!Compiler.Symbols.ContainsKey(identifier))
+            {
+                Compiler.Error(Location, "undeclared variable");
+                return;
+            }
+
+            Type = Compiler.Symbols[identifier];
+            if (Type != expression?.Type)
+            {
+                Compiler.Error(Location, "type mismatch");
+                return;
+            }
+
+            Store(expression?.Identifier, identifier);
+            Identifier = Compiler.NewTemp();
+            Load(identifier);
+        }
+    }
+    
+    public class NumberExpression : SyntaxTree
+    {
+        public NumberExpression(string value, TypeEnum type, LexLocation location) : base(location)
+        {
+            Type = type;
+            Identifier = value;
+        }
+
+        public override void GenerateCode()
+        {
         }
     }
 }

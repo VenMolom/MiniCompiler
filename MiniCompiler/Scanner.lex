@@ -31,7 +31,7 @@ DoubleNumber    ([1-9][0-9]*|0)\.[0-9]+
 {IntNumber}     { yylval.val = yytext; return (int)Tokens.IntNumber; }
 {HexNumber}     { yylval.val = Convert.ToInt32(yytext, 16).ToString(); return (int)Tokens.IntNumber; }
 {DoubleNumber}  { yylval.val = yytext; return (int)Tokens.DoubleNumber; }
-{Ident}         { yylval.val = yytext; return (int)Tokens.Ident; }
+{Ident}         { yylval.val = "%" + yytext; return (int)Tokens.Ident; }
 
 "="             { return (int)Tokens.Assign; }
 "||"            { return (int)Tokens.Or; }
@@ -82,7 +82,7 @@ DoubleNumber    ([1-9][0-9]*|0)\.[0-9]+
 "\n"            { }
 
 <INITIAL>"//"   { BEGIN(COMMENT); }
-<INITIAL>"\""   { BEGIN(STRING); parsedString = new StringBuilder(); }
+<INITIAL>"\""   { BEGIN(STRING); parsedString = new StringBuilder(); stringLengthModif = 0; }
 
 <<EOF>>         { 
                     if (blocks > 0) {
@@ -95,12 +95,12 @@ DoubleNumber    ([1-9][0-9]*|0)\.[0-9]+
 <COMMENT>"\n"   { BEGIN(INITIAL); }
 <COMMENT>.      { }
 
-<STRING>"\\\\"  { parsedString.Append(yytext); }
-<STRING>"\\n"   { parsedString.Append(yytext); }
-<STRING>"\\\""  { parsedString.Append(yytext); }
+<STRING>"\\\\"  { parsedString.Append("\\"); stringLengthModif--; }
+<STRING>"\\n"   { parsedString.Append("\\0A"); stringLengthModif -= 2; }
+<STRING>"\\\""  { parsedString.Append("\\22"); stringLengthModif -= 2; }
 <STRING>"\""    { 
                     yylval.val = parsedString.ToString(); 
-                    Compiler.StringLiterals.Add(yylval.val);
+                    Compiler.AddLiteral(yylval.val, stringLengthModif);
                     BEGIN(INITIAL); 
                     return (int)Tokens.String; 
                 }
@@ -123,4 +123,4 @@ private int parenthesis = 0;
 private int blocks = 0;
 
 private StringBuilder parsedString;
-
+private int stringLengthModif = 0;

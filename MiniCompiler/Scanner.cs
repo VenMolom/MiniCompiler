@@ -6,9 +6,9 @@
 //
 //  GPLEX Version:  1.2.2
 //  Machine:  DESKTOP-4T5HHDR
-//  DateTime: 2021-06-10 21:52:10
+//  DateTime: 2021-06-14 00:45:30
 //  UserName: Molom
-//  GPLEX input file <Scanner.lex - 2021-06-10 20:25:26>
+//  GPLEX input file <Scanner.lex - 2021-06-14 00:45:10>
 //  GPLEX frame file <embedded resource>
 //
 //  Option settings: parser, minimize
@@ -1050,7 +1050,7 @@ Error("unexpected character"); return (int)Tokens.Error;
 return (int)Tokens.Negate;
             break;
         case 7:
-BEGIN(STRING); parsedString = new StringBuilder();
+BEGIN(STRING); parsedString = new StringBuilder(); stringLengthModif = 0;
             break;
         case 8:
 return (int)Tokens.BitAnd;
@@ -1241,6 +1241,7 @@ Error("Newline in string now allowed"); BEGIN(INITIAL); return (int)Tokens.Error
             break;
         case 94:
 yylval.val = parsedString.ToString(); 
+                    Compiler.AddLiteral(yylval.val, stringLengthModif);
                     BEGIN(INITIAL); 
                     return (int)Tokens.String;
             break;
@@ -1248,13 +1249,13 @@ yylval.val = parsedString.ToString();
 { }
             break;
         case 96:
-parsedString.Append(yytext);
+parsedString.Append("\\22"); stringLengthModif -= 2;
             break;
         case 97:
-parsedString.Append(yytext);
+parsedString.Append("\\"); stringLengthModif--;
             break;
         case 98:
-parsedString.Append(yytext);
+parsedString.Append("\\0A"); stringLengthModif -= 2;
             break;
         default:
             break;
@@ -1329,6 +1330,7 @@ private int parenthesis = 0;
 private int blocks = 0;
 
 private StringBuilder parsedString;
+private int stringLengthModif = 0;
 
 #endregion
     } // end class $Scanner
