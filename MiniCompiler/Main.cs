@@ -1,9 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Security;
-using System.Security.Cryptography;
+using System.IO;
 using QUT.Gppg;
 
 namespace MiniCompiler
