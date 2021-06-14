@@ -8,7 +8,11 @@
     public TypeEnum type;
     public SyntaxTree tree;
     public List<SyntaxTree> list;
-    public LogicalExpression.Operation logicalOperator;
+    public LogicalExpression.Operation logicalOperation;
+    public RelationalExpression.Operation relationalOperation;
+    public ArithmeticExpression.Operation arithmeticOperation;
+    public BinaryExpression.Operation binaryOperation;
+    public UnaryExpression.Operation unaryOperation;
 }
 
 %token Program If Else While Read Write Return Int Double Bool True False Hex
@@ -17,10 +21,14 @@
 %token <val> Ident IntNumber DoubleNumber String Error
 
 %type <tree> programContent declaration instruction output_instruction input_instruction block_instruction conditional_instruction
-%type <tree> loop_instruction exp number logical exp_rest relational
+%type <tree> loop_instruction exp number logical exp_rest relational additive multiplicative binary unary
 %type <type> type
 %type <list> identifiers instructions declarations
-%type <logicalOperator> logical_op
+%type <logicalOperation> logical_op
+%type <relationalOperation> relational_op
+%type <arithmeticOperation> additive_op multiplicative_op
+%type <binaryOperation> binary_op
+%type <unaryOperation> unary_op
 
 %%
 
@@ -169,12 +177,82 @@ logical_op
     ;
     
 relational
-    : exp_rest
+    : relational relational_op additive
+        { $$ = new RelationalExpression($1, $3, $2, @$); }
+    | additive
     ;
+    
+relational_op
+    : Equal
+        { $$ = RelationalExpression.Operation.Equal; }
+    | NotEqual
+        { $$ = RelationalExpression.Operation.NotEqual; }
+    | Less
+        { $$ = RelationalExpression.Operation.Less; }
+    | LessEqual
+        { $$ = RelationalExpression.Operation.LessEqual; }
+    | Greater
+        { $$ = RelationalExpression.Operation.Greater; }
+    | GreaterEqual
+        { $$ = RelationalExpression.Operation.GreaterEqual; }
+    ;
+    
+additive
+    : additive additive_op multiplicative
+        { $$ = new ArithmeticExpression($1, $3, $2, @$); }
+    | multiplicative
+    ;
+    
+additive_op
+    : Plus
+        { $$ = ArithmeticExpression.Operation.Addition; }
+    | Minus
+        { $$ = ArithmeticExpression.Operation.Subtraction; }
+    ;
+    
+multiplicative
+    : multiplicative multiplicative_op binary
+        { $$ = new ArithmeticExpression($1, $3, $2, @$); }
+    | binary
+    ;
+    
+multiplicative_op
+    : Multiply
+        { $$ = ArithmeticExpression.Operation.Multiplication; }
+    | Divide
+        { $$ = ArithmeticExpression.Operation.Division; }
+    ;
+    
+binary
+    : binary binary_op unary
+        { $$ = new BinaryExpression($1, $3, $2, @$); }
+    | unary
+    ;
+    
+binary_op
+    : BitAnd
+        { $$ = BinaryExpression.Operation.And; }
+    | BitOr
+        { $$ = BinaryExpression.Operation.Or; }
+    ;
+    
+unary
+    : unary_op unary
+    | exp_rest
+    ;
+    
+unary_op
+    : Minus
+    | Negate
+    | BitNegate
+    | OpenPar Int ClosePar
+    | OpenPar Double ClosePar
     
 exp_rest
     : Ident
         { $$ = new IdentifierExpression($1, @$); }
+    | OpenPar exp ClosePar
+        { $$ = $2; }
     | number
     ;
     

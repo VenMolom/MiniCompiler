@@ -1,6 +1,4 @@
 program {
-    write true || false;
-    write true || true;
-    write false || false;
-    write false || true;
+    write 15 & 40;
+    write 15 | 40;
 }

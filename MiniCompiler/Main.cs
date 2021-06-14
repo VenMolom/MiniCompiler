@@ -176,6 +176,11 @@ namespace MiniCompiler
         {
             Compiler.EmitCode($"{Identifier} = sitofp {sourceType.LlvmType()} {source} to {Type.LlvmType()}");
         }
+        
+        protected void Cast(string source, TypeEnum sourceType, string target, TypeEnum targetType)
+        {
+            Compiler.EmitCode($"{target} = sitofp {sourceType.LlvmType()} {source} to {targetType.LlvmType()}");
+        }
     }
 
     public class Program : SyntaxTree
@@ -303,7 +308,7 @@ namespace MiniCompiler
             var endlab = Compiler.NewTemp(true);
             
             condition.GenerateCode();
-            Compiler.EmitCode($"br i1 {condition?.Identifier}, label %{truelab}, label %{falselab}");
+            Compiler.EmitCode($"br i1 {condition.Identifier}, label %{truelab}, label %{falselab}");
             Compiler.EmitCode($"{truelab}:");
             thenInstruction?.GenerateCode();
             Compiler.EmitCode($"br label %{endlab}");
@@ -340,7 +345,7 @@ namespace MiniCompiler
             Compiler.EmitCode($"br label %{startlab}");
             Compiler.EmitCode($"{startlab}:");
             condition.GenerateCode();
-            Compiler.EmitCode($"br i1 {condition?.Identifier}, label %{innerlab}, label %{endlab}");
+            Compiler.EmitCode($"br i1 {condition.Identifier}, label %{innerlab}, label %{endlab}");
             Compiler.EmitCode($"{innerlab}:");
             instruction?.GenerateCode();
             Compiler.EmitCode($"br label %{startlab}");
@@ -382,8 +387,6 @@ namespace MiniCompiler
 
         public override void GenerateCode()
         {
-            expression?.GenerateCode();
-
             if (expression == null && !string.IsNullOrEmpty(literal))
             {
                 var (ident, length) = Compiler.StringLiterals[literal];
@@ -396,27 +399,27 @@ namespace MiniCompiler
                 return;
             }
             
-            switch (flag)
+            expression.GenerateCode();
+            if (flag == Flag.None)
             {
-                case Flag.None:
-                    if (expression.Type == TypeEnum.Bool)
-                    {
-                        PrintBool();
-                        return;
-                    }
+                if (expression.Type == TypeEnum.Bool)
+                {
+                    PrintBool();
+                    return;
+                }
 
-                    var length = expression.Type == TypeEnum.Double ? 4 : 3;
-                    Print(length);
-                    break;
-                case Flag.Hex:
-                    if (expression.Type != TypeEnum.Int)
-                    {
-                        Compiler.Error(expression.Location, "variable must be int to be printed as hex");
-                        return;
-                    }
+                var length = expression.Type == TypeEnum.Double ? 4 : 3;
+                Print(length);
+            }
+            else if (flag == Flag.Hex)
+            {
+                if (expression.Type != TypeEnum.Int)
+                {
+                    Compiler.Error(expression.Location, "variable must be int to be printed as hex");
+                    return;
+                }
 
-                    Print(6, "hex");
-                    break;
+                Print(6, "hex");
             }
         }
 
@@ -539,7 +542,7 @@ namespace MiniCompiler
 
         public override void GenerateCode()
         {
-            expression?.GenerateCode();
+            expression.GenerateCode();
             
             if (!Compiler.Symbols.ContainsKey(identifier))
             {
@@ -550,27 +553,31 @@ namespace MiniCompiler
             Type = Compiler.Symbols[identifier];
             switch (Type)
             {
-                case TypeEnum.Bool when expression?.Type != TypeEnum.Bool:
+                case TypeEnum.Bool when expression.Type != TypeEnum.Bool:
                     Compiler.Error(Location, "Can only assign bool to bool");
                     return;
-                case TypeEnum.Int when expression?.Type != TypeEnum.Int:
+                case TypeEnum.Int when expression.Type != TypeEnum.Int:
                     Compiler.Error(Location, "Can only assign int to int");
                     return;
-                case TypeEnum.Double when expression?.Type == TypeEnum.Bool:
+                case TypeEnum.Double when expression.Type == TypeEnum.Bool:
                     Compiler.Error(Location, "Cannot assign bool to double");
                     return;
+                case TypeEnum.String:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
-            if (Type == TypeEnum.Double && expression?.Type == TypeEnum.Int)
+            if (Type == TypeEnum.Double && expression.Type == TypeEnum.Int)
             {
                 var tmp = Compiler.NewTemp();
                 Identifier = tmp;
-                Cast(expression?.Identifier, expression.Type);
+                Cast(expression.Identifier, expression.Type);
                 Store(identifier);
             }
             else
             {
-                Identifier = expression?.Identifier;
+                Identifier = expression.Identifier;
                 Store(identifier);
             }
         }
@@ -595,7 +602,8 @@ namespace MiniCompiler
         private readonly SyntaxTree right;
         private readonly Operation operation;
 
-        public LogicalExpression(SyntaxTree left, SyntaxTree right, Operation operation, LexLocation location) : base(location)
+        public LogicalExpression(SyntaxTree left, SyntaxTree right, Operation operation, LexLocation location)
+            : base(location)
         {
             this.left = left;
             this.right = right;
@@ -604,10 +612,10 @@ namespace MiniCompiler
 
         public override void GenerateCode()
         {
-            left?.GenerateCode();
-            if (left?.Type != TypeEnum.Bool)
+            left.GenerateCode();
+            if (left.Type != TypeEnum.Bool)
             {
-                Compiler.Error(left?.Location, "expression is not of type bool");
+                Compiler.Error(left.Location, "expression is not of type bool");
                 return;
             }
 
@@ -620,36 +628,369 @@ namespace MiniCompiler
             switch (operation)
             {
                 case Operation.And:
-                    Compiler.EmitCode($"br i1 {left?.Identifier}, label %{rightlab}, label %{leftlab}");
+                    Compiler.EmitCode($"br i1 {left.Identifier}, label %{rightlab}, label %{leftlab}");
                     Compiler.EmitCode($"{leftlab}:");
                     Compiler.EmitCode($"br label %{endlab}");
                     Compiler.EmitCode($"{rightlab}:");
-                    right?.GenerateCode();
+                    right.GenerateCode();
                     Compiler.EmitCode($"br label %{endlab}");
                     Compiler.EmitCode($"{endlab}:");
-                    Compiler.EmitCode($"{Identifier} = phi i1 [ 0, %{leftlab}], [{right?.Identifier}, %{rightlab}]");
+                    Compiler.EmitCode($"{Identifier} = phi i1 [ 0, %{leftlab}], [{right.Identifier}, %{rightlab}]");
                     break;
                 case Operation.Or:
-                    Compiler.EmitCode($"br i1 {left?.Identifier}, label %{leftlab}, label %{rightlab}");
+                    Compiler.EmitCode($"br i1 {left.Identifier}, label %{leftlab}, label %{rightlab}");
                     Compiler.EmitCode($"{leftlab}:");
                     Compiler.EmitCode($"br label %{endlab}");
                     Compiler.EmitCode($"{rightlab}:");
-                    right?.GenerateCode();
+                    right.GenerateCode();
                     Compiler.EmitCode($"br label %{endlab}");
                     Compiler.EmitCode($"{endlab}:");
-                    Compiler.EmitCode($"{Identifier} = phi i1 [ 1, %{leftlab}], [{right?.Identifier}, %{rightlab}]");
+                    Compiler.EmitCode($"{Identifier} = phi i1 [ 1, %{leftlab}], [{right.Identifier}, %{rightlab}]");
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
             
-            if (right?.Type != TypeEnum.Bool)
+            if (right.Type != TypeEnum.Bool)
             {
-                Compiler.Error(right?.Location, "expression is not of type bool");
+                Compiler.Error(right.Location, "expression is not of type bool");
             }
         }
         
         public enum Operation
         {
             And, Or
+        }
+    }
+    
+    public class RelationalExpression : SyntaxTree
+    {
+        private readonly SyntaxTree left;
+        private readonly SyntaxTree right;
+        private readonly Operation operation;
+
+        public RelationalExpression(SyntaxTree left, SyntaxTree right, Operation operation, LexLocation location)
+            : base(location)
+        {
+            this.left = left;
+            this.right = right;
+            this.operation = operation;
+        }
+
+        public override void GenerateCode()
+        {
+            left.GenerateCode();
+            right.GenerateCode();
+            
+            var type = TypeEnum.Int.LlvmType();
+            if (operation != Operation.Equal && operation != Operation.NotEqual)
+            {
+                if (left.Type == TypeEnum.Bool)
+                {
+                    Compiler.Error(left.Location, "expression cannot be bool");
+                    return;
+                }
+                
+                if (right.Type == TypeEnum.Bool)
+                {
+                    Compiler.Error(right.Location, "expression cannot be bool");
+                    return;
+                }
+            }
+            else
+            {
+                if (left.Type == TypeEnum.Bool && right.Type != TypeEnum.Bool)
+                {
+                    Compiler.Error(right.Location, "both expressions must be bool");
+                    return;
+                }
+                
+                if (left.Type != TypeEnum.Bool && right.Type == TypeEnum.Bool)
+                {
+                    Compiler.Error(left.Location, "both expressions must be bool");
+                    return;
+                }
+
+                if (left.Type == TypeEnum.Bool && right.Type == TypeEnum.Bool)
+                {
+                    type = TypeEnum.Bool.LlvmType();
+                }
+            }
+            
+            Identifier = Compiler.NewTemp();
+            Type = TypeEnum.Bool;
+
+            string op;
+            var com = "icmp";
+            if (left.Type == TypeEnum.Double || right.Type == TypeEnum.Double)
+            {
+                type = TypeEnum.Double.LlvmType();
+                com = "fcmp";
+                
+                switch (operation)
+                {
+                    case Operation.Equal:
+                        op = "oeq";
+                        break;
+                    case Operation.NotEqual:
+                        op = "one";
+                        break;
+                    case Operation.Greater:
+                        op = "ogt";
+                        break;
+                    case Operation.GreaterEqual:
+                        op = "oge";
+                        break;
+                    case Operation.Less:
+                        op = "olt";
+                        break;
+                    case Operation.LessEqual:
+                        op = "ole";
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                if (left.Type == TypeEnum.Int)
+                {
+                    var tmp = Compiler.NewTemp();
+                    Cast(left.Identifier, TypeEnum.Int, tmp, TypeEnum.Double);
+                    left.Identifier = tmp;
+                }
+                
+                if (right.Type == TypeEnum.Int)
+                {
+                    var tmp = Compiler.NewTemp();
+                    Cast(right.Identifier, TypeEnum.Int, tmp, TypeEnum.Double);
+                    right.Identifier = tmp;
+                }
+            }
+            else
+            {
+                switch (operation)
+                {
+                    case Operation.Equal:
+                        op = "eq";
+                        break;
+                    case Operation.NotEqual:
+                        op = "ne";
+                        break;
+                    case Operation.Greater:
+                        op = "sgt";
+                        break;
+                    case Operation.GreaterEqual:
+                        op = "sge";
+                        break;
+                    case Operation.Less:
+                        op = "slt";
+                        break;
+                    case Operation.LessEqual:
+                        op = "sle";
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+            
+            Compiler.EmitCode($"{Identifier} = {com} {op} {type} {left.Identifier}, {right.Identifier}");
+        }
+        
+        public enum Operation
+        {
+            Equal, NotEqual, Greater, GreaterEqual, Less, LessEqual
+        }
+    }
+    
+    public class ArithmeticExpression : SyntaxTree
+    {
+        private readonly SyntaxTree left;
+        private readonly SyntaxTree right;
+        private readonly Operation operation;
+
+        public ArithmeticExpression(SyntaxTree left, SyntaxTree right, Operation operation, LexLocation location) : base(location)
+        {
+            this.left = left;
+            this.right = right;
+            this.operation = operation;
+        }
+
+        public override void GenerateCode()
+        {
+            left.GenerateCode();
+            right.GenerateCode();
+            
+            if (left.Type == TypeEnum.Bool)
+            {
+                Compiler.Error(left.Location, "expression cannot be bool");
+                return;
+            }
+            if (right.Type == TypeEnum.Bool)
+            {
+                Compiler.Error(right.Location, "expression cannot be bool");
+                return;
+            }
+
+            Identifier = Compiler.NewTemp();
+
+            string op;
+            if (left.Type == TypeEnum.Double || right.Type == TypeEnum.Double)
+            {
+                Type = TypeEnum.Double;
+
+                switch (operation)
+                {
+                    case Operation.Addition:
+                        op = "fadd";
+                        break;
+                    case Operation.Subtraction:
+                        op = "fsub";
+                        break;
+                    case Operation.Multiplication:
+                        op = "fmul";
+                        break;
+                    case Operation.Division:
+                        op = "fdiv";
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                if (left.Type == TypeEnum.Int)
+                {
+                    var tmp = Compiler.NewTemp();
+                    Cast(left.Identifier, TypeEnum.Int, tmp, TypeEnum.Double);
+                    left.Identifier = tmp;
+                }
+                
+                if (right.Type == TypeEnum.Int)
+                {
+                    var tmp = Compiler.NewTemp();
+                    Cast(right.Identifier, TypeEnum.Int, tmp, TypeEnum.Double);
+                    right.Identifier = tmp;
+                }
+            }
+            else
+            {
+                Type = TypeEnum.Int;
+                
+                switch (operation)
+                {
+                    case Operation.Addition:
+                        op = "add";
+                        break;
+                    case Operation.Subtraction:
+                        op = "sub";
+                        break;
+                    case Operation.Multiplication:
+                        op = "mul";
+                        break;
+                    case Operation.Division:
+                        op = "sdiv";
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+            
+            Compiler.EmitCode($"{Identifier} = {op} {Type.LlvmType()} {left.Identifier}, {right.Identifier}");
+        }
+        
+        public enum Operation
+        {
+            Addition, Subtraction, Multiplication, Division
+        }
+    }
+    
+    public class BinaryExpression : SyntaxTree
+    {
+        private readonly SyntaxTree left;
+        private readonly SyntaxTree right;
+        private readonly Operation operation;
+
+        public BinaryExpression(SyntaxTree left, SyntaxTree right, Operation operation,LexLocation location) : base(location)
+        {
+            this.left = left;
+            this.right = right;
+            this.operation = operation;
+        }
+
+        public override void GenerateCode()
+        {
+            left.GenerateCode();
+            right.GenerateCode();
+
+            if (left.Type != TypeEnum.Int)
+            {
+                Compiler.Error(left.Location, "expression must be int");
+                return;
+            }
+            
+            if (right.Type != TypeEnum.Int)
+            {
+                Compiler.Error(right.Location, "expression must be int");
+                return;
+            }
+
+            Identifier = Compiler.NewTemp();
+            Type = TypeEnum.Int;
+
+            string op;
+            switch (operation)
+            {
+                case Operation.And:
+                    op = "and";
+                    break;
+                case Operation.Or:
+                    op = "or";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            Compiler.EmitCode($"{Identifier} = {op} i32 {left.Identifier}, {right.Identifier}");
+        }
+        
+        public enum Operation
+        {
+            And, Or
+        }
+    }
+    
+    public class UnaryExpression : SyntaxTree
+    {
+        private readonly SyntaxTree right;
+        private readonly Operation operation;
+
+        public UnaryExpression(SyntaxTree right, Operation operation, LexLocation location) : base(location)
+        {
+            this.right = right;
+            this.operation = operation;
+        }
+
+        public override void GenerateCode()
+        {
+            right.GenerateCode();
+
+            Identifier = Compiler.NewTemp();
+            switch (operation)
+            {
+                case Operation.Minus:
+                    break;
+                case Operation.Negate:
+                    break;
+                case Operation.BitNegate:
+                    break;
+                case Operation.CastInt:
+                    break;
+                case Operation.CastDouble:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public enum Operation
+        {
+            Minus, Negate, BitNegate, CastInt, CastDouble
         }
     }
 }
