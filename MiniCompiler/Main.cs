@@ -167,9 +167,14 @@ namespace MiniCompiler
             Compiler.EmitCode($"{Identifier} = load {Type.LlvmType()}, {Type.LlvmType()}* {source}");
         }
 
-        protected void Store(string source, string target)
+        protected void Store(string target)
         {
-            Compiler.EmitCode($"store {Type.LlvmType()} {source}, {Type.LlvmType()}* {target}");
+            Compiler.EmitCode($"store {Type.LlvmType()} {Identifier}, {Type.LlvmType()}* {target}");
+        }
+
+        protected void Cast(string source, TypeEnum sourceType)
+        {
+            Compiler.EmitCode($"{Identifier} = sitofp {sourceType.LlvmType()} {source} to {Type.LlvmType()}");
         }
     }
 
@@ -543,15 +548,31 @@ namespace MiniCompiler
             }
 
             Type = Compiler.Symbols[identifier];
-            if (Type != expression?.Type)
+            switch (Type)
             {
-                Compiler.Error(Location, "type mismatch");
-                return;
+                case TypeEnum.Bool when expression?.Type != TypeEnum.Bool:
+                    Compiler.Error(Location, "Can only assign bool to bool");
+                    return;
+                case TypeEnum.Int when expression?.Type != TypeEnum.Int:
+                    Compiler.Error(Location, "Can only assign int to int");
+                    return;
+                case TypeEnum.Double when expression?.Type == TypeEnum.Bool:
+                    Compiler.Error(Location, "Cannot assign bool to double");
+                    return;
             }
 
-            Store(expression?.Identifier, identifier);
-            Identifier = Compiler.NewTemp();
-            Load(identifier);
+            if (Type == TypeEnum.Double && expression?.Type == TypeEnum.Int)
+            {
+                var tmp = Compiler.NewTemp();
+                Identifier = tmp;
+                Cast(expression?.Identifier, expression.Type);
+                Store(identifier);
+            }
+            else
+            {
+                Identifier = expression?.Identifier;
+                Store(identifier);
+            }
         }
     }
     
@@ -565,6 +586,70 @@ namespace MiniCompiler
 
         public override void GenerateCode()
         {
+        }
+    }
+
+    public class LogicalExpression : SyntaxTree
+    {
+        private readonly SyntaxTree left;
+        private readonly SyntaxTree right;
+        private readonly Operation operation;
+
+        public LogicalExpression(SyntaxTree left, SyntaxTree right, Operation operation, LexLocation location) : base(location)
+        {
+            this.left = left;
+            this.right = right;
+            this.operation = operation;
+        }
+
+        public override void GenerateCode()
+        {
+            left?.GenerateCode();
+            if (left?.Type != TypeEnum.Bool)
+            {
+                Compiler.Error(left?.Location, "expression is not of type bool");
+                return;
+            }
+
+            var rightlab = Compiler.NewTemp(true);
+            var leftlab = Compiler.NewTemp(true);
+            var endlab = Compiler.NewTemp(true);
+
+            Identifier = Compiler.NewTemp();
+            Type = TypeEnum.Bool;
+            switch (operation)
+            {
+                case Operation.And:
+                    Compiler.EmitCode($"br i1 {left?.Identifier}, label %{rightlab}, label %{leftlab}");
+                    Compiler.EmitCode($"{leftlab}:");
+                    Compiler.EmitCode($"br label %{endlab}");
+                    Compiler.EmitCode($"{rightlab}:");
+                    right?.GenerateCode();
+                    Compiler.EmitCode($"br label %{endlab}");
+                    Compiler.EmitCode($"{endlab}:");
+                    Compiler.EmitCode($"{Identifier} = phi i1 [ 0, %{leftlab}], [{right?.Identifier}, %{rightlab}]");
+                    break;
+                case Operation.Or:
+                    Compiler.EmitCode($"br i1 {left?.Identifier}, label %{leftlab}, label %{rightlab}");
+                    Compiler.EmitCode($"{leftlab}:");
+                    Compiler.EmitCode($"br label %{endlab}");
+                    Compiler.EmitCode($"{rightlab}:");
+                    right?.GenerateCode();
+                    Compiler.EmitCode($"br label %{endlab}");
+                    Compiler.EmitCode($"{endlab}:");
+                    Compiler.EmitCode($"{Identifier} = phi i1 [ 1, %{leftlab}], [{right?.Identifier}, %{rightlab}]");
+                    break;
+            }
+            
+            if (right?.Type != TypeEnum.Bool)
+            {
+                Compiler.Error(right?.Location, "expression is not of type bool");
+            }
+        }
+        
+        public enum Operation
+        {
+            And, Or
         }
     }
 }

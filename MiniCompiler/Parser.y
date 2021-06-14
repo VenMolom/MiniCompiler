@@ -8,6 +8,7 @@
     public TypeEnum type;
     public SyntaxTree tree;
     public List<SyntaxTree> list;
+    public LogicalExpression.Operation logicalOperator;
 }
 
 %token Program If Else While Read Write Return Int Double Bool True False Hex
@@ -16,9 +17,10 @@
 %token <val> Ident IntNumber DoubleNumber String Error
 
 %type <tree> programContent declaration instruction output_instruction input_instruction block_instruction conditional_instruction
-%type <tree> loop_instruction exp number
+%type <tree> loop_instruction exp number logical exp_rest relational
 %type <type> type
 %type <list> identifiers instructions declarations
+%type <logicalOperator> logical_op
 
 %%
 
@@ -150,7 +152,28 @@ block_instruction
 exp
     : Ident Assign exp
         { $$ = new AssignmentExpression($1, $3, @$); }
-    | Ident
+    | logical
+    ;
+    
+logical
+    : logical logical_op relational
+        { $$ = new LogicalExpression($1, $3, $2, @$); }
+    | relational
+    ;
+    
+logical_op
+    : And
+        { $$ = LogicalExpression.Operation.And; }
+    | Or
+        { $$ = LogicalExpression.Operation.Or; }
+    ;
+    
+relational
+    : exp_rest
+    ;
+    
+exp_rest
+    : Ident
         { $$ = new IdentifierExpression($1, @$); }
     | number
     ;
