@@ -40,10 +40,10 @@ DoubleNumber    ([1-9][0-9]*|0)\.[0-9]+
 "&"             { return (int)Tokens.BitAnd; }
 "=="            { return (int)Tokens.Equal; }
 "!="            { return (int)Tokens.NotEqual; }
-">"             { return (int)Tokens.Less; }
-">="            { return (int)Tokens.LessEqual; }
-"<"             { return (int)Tokens.Greater; }
-"<="            { return (int)Tokens.GreaterEqual; }
+">"             { return (int)Tokens.Greater; }
+">="            { return (int)Tokens.GreaterEqual; }
+"<"             { return (int)Tokens.Less; }
+"<="            { return (int)Tokens.LessEqual; }
 "+"             { return (int)Tokens.Plus; }
 "-"             { return (int)Tokens.Minus; }
 "*"             { return (int)Tokens.Multiply; }
@@ -84,7 +84,10 @@ DoubleNumber    ([1-9][0-9]*|0)\.[0-9]+
 <INITIAL>"//"   { BEGIN(COMMENT); }
 <INITIAL>"\""   { BEGIN(STRING); parsedString = new StringBuilder(); stringLengthModif = 0; }
 
-<<EOF>>         { 
+<<EOF>>         {
+                    if (parenthesis > 0) {
+                        Error("unclosed parenthesis");
+                    } 
                     if (blocks > 0) {
                         Error("unclosed block");
                     }
@@ -95,7 +98,7 @@ DoubleNumber    ([1-9][0-9]*|0)\.[0-9]+
 <COMMENT>"\n"   { BEGIN(INITIAL); }
 <COMMENT>.      { }
 
-<STRING>"\\\\"  { parsedString.Append("\\"); stringLengthModif--; }
+<STRING>"\\\\"  { parsedString.Append(yytext); stringLengthModif--; }
 <STRING>"\\n"   { parsedString.Append("\\0A"); stringLengthModif -= 2; }
 <STRING>"\\\""  { parsedString.Append("\\22"); stringLengthModif -= 2; }
 <STRING>"\""    { 
@@ -117,6 +120,7 @@ DoubleNumber    ([1-9][0-9]*|0)\.[0-9]+
 
 private void Error(string text) {
     Console.WriteLine(string.Format("Error ({0},{1}): {2}", yyline, yycol, text));
+    Compiler.Errors++;
 }
 
 private int parenthesis = 0;

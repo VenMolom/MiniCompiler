@@ -11,10 +11,10 @@ namespace MiniCompiler
         public static readonly Dictionary<string, (string ident, int length)> StringLiterals =
             new Dictionary<string, (string, int)>();
         public static SyntaxTree Program = null;
+        public static int Errors = 0;
 
         private static StreamWriter sw;
         private static int temps = 0;
-        private static int errors = 0;
 
         public static int Main(string[] args)
         {
@@ -47,32 +47,39 @@ namespace MiniCompiler
             
             sw = new StreamWriter(file + ".ll");
 
-            try
-            {
+            // try
+            // {
                 parser.Parse();
-            }
-            catch
-            {
-                sw.Close();
-                source.Close();
-                Console.WriteLine($"\n{errors} errors detected\n");
-                File.Delete(file + ".ll");
-                return 2;
-            }
-
-            if (errors == 0 && Program != null)
+            // }
+            // catch
+            // {
+            //     sw.Close();
+            //     source.Close();
+            //     Console.WriteLine($"\n{Errors} Errors detected\n");
+            //     File.Delete(file + ".ll");
+            //     return 2;
+            // }
+            if (Errors == 0 && Program != null)
             {   
                 GenProlog();
                 Program.GenerateCode();
-                sw.Close();
-                source.Close();
             }
-
-            if (errors != 0)
+            
+            sw.Close();
+            source.Close();
+            
+            if (Errors != 0 || Program == null)
             {
-                sw.Close();
-                source.Close();
-                Console.WriteLine($"\n{errors} errors detected\n");
+                if (Program == null)
+                {
+                    Console.WriteLine($"\nProgram keyword not found\n");
+                }
+                
+                if (Errors != 0)
+                {
+                    Console.WriteLine($"\n{Errors} Errors detected\n");
+                }
+
                 File.Delete(file + ".ll");
                 return 2;
             }
@@ -93,12 +100,15 @@ namespace MiniCompiler
         public static void Error(LexLocation location, string text = "syntax error")
         {
             Console.WriteLine($"Error ({location.StartLine},{location.StartColumn}): {text}");
-            errors++;
+            Errors++;
         }
 
         public static void AddLiteral(string literal, int lengthModif)
         {
-            StringLiterals.Add(literal, (NewTemp(true), literal.Length + lengthModif + 1));
+            if (!StringLiterals.ContainsKey(literal))
+            {
+                StringLiterals.Add(literal, (NewTemp(true), literal.Length + lengthModif + 1));
+            }
         }
 
         private static void GenProlog()
@@ -172,11 +182,6 @@ namespace MiniCompiler
             Compiler.EmitCode($"store {Type.LlvmType()} {Identifier}, {Type.LlvmType()}* {target}");
         }
 
-        protected void Cast(string source, TypeEnum sourceType)
-        {
-            Compiler.EmitCode($"{Identifier} = sitofp {sourceType.LlvmType()} {source} to {Type.LlvmType()}");
-        }
-        
         protected void Cast(string source, TypeEnum sourceType, string target, TypeEnum targetType)
         {
             Compiler.EmitCode($"{target} = sitofp {sourceType.LlvmType()} {source} to {targetType.LlvmType()}");
@@ -297,17 +302,18 @@ namespace MiniCompiler
 
         public override void GenerateCode()
         {
+            var truelab = Compiler.NewTemp(true);
+            var falselab = Compiler.NewTemp(true);
+            var endlab = Compiler.NewTemp(true);
+            
+            condition.GenerateCode();
+            
             if (condition.Type != TypeEnum.Bool)
             {
                 Compiler.Error(condition.Location, "condition needs to be of type bool");
                 return;
             }
             
-            var truelab = Compiler.NewTemp(true);
-            var falselab = Compiler.NewTemp(true);
-            var endlab = Compiler.NewTemp(true);
-            
-            condition.GenerateCode();
             Compiler.EmitCode($"br i1 {condition.Identifier}, label %{truelab}, label %{falselab}");
             Compiler.EmitCode($"{truelab}:");
             thenInstruction?.GenerateCode();
@@ -332,12 +338,6 @@ namespace MiniCompiler
 
         public override void GenerateCode()
         {
-            if (condition.Type != TypeEnum.Bool)
-            {
-                Compiler.Error(condition.Location, "condition needs to be of type bool");
-                return;
-            }
-            
             var startlab = Compiler.NewTemp(true);
             var innerlab = Compiler.NewTemp(true);
             var endlab = Compiler.NewTemp(true);
@@ -345,6 +345,13 @@ namespace MiniCompiler
             Compiler.EmitCode($"br label %{startlab}");
             Compiler.EmitCode($"{startlab}:");
             condition.GenerateCode();
+            
+            if (condition.Type != TypeEnum.Bool)
+            {
+                Compiler.Error(condition.Location, "condition needs to be of type bool");
+                return;
+            }
+            
             Compiler.EmitCode($"br i1 {condition.Identifier}, label %{innerlab}, label %{endlab}");
             Compiler.EmitCode($"{innerlab}:");
             instruction?.GenerateCode();
@@ -419,7 +426,7 @@ namespace MiniCompiler
                     return;
                 }
 
-                Print(6, "hex");
+                Print(5, "hex");
             }
         }
 
@@ -500,7 +507,7 @@ namespace MiniCompiler
         
         private void Read(string type, int length, string format = null)
         {
-            Compiler.EmitCode($"call i32 (i8*, ...) @printf(i8* bitcast ([{length} x i8]* " +
+            Compiler.EmitCode($"call i32 (i8*, ...) @scanf(i8* bitcast ([{length} x i8]* " +
                               $"@{format ?? type} to i8*)" +
                               $", {type}* {identifier.Identifier})");
         }
@@ -564,8 +571,6 @@ namespace MiniCompiler
                     return;
                 case TypeEnum.String:
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
 
             if (Type == TypeEnum.Double && expression.Type == TypeEnum.Int)
@@ -580,6 +585,11 @@ namespace MiniCompiler
                 Identifier = expression.Identifier;
                 Store(identifier);
             }
+        }
+        
+        private void Cast(string source, TypeEnum sourceType)
+        {
+            Compiler.EmitCode($"{Identifier} = sitofp {sourceType.LlvmType()} {source} to {Type.LlvmType()}");
         }
     }
     
@@ -974,18 +984,108 @@ namespace MiniCompiler
             switch (operation)
             {
                 case Operation.Minus:
+                    UnaryMinus();
                     break;
                 case Operation.Negate:
+                    UnaryNegate();
                     break;
                 case Operation.BitNegate:
+                    UnaryBitNegate();
                     break;
                 case Operation.CastInt:
+                    UnaryCastInt();
                     break;
                 case Operation.CastDouble:
+                    UnaryCastDouble();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private void UnaryCastDouble()
+        {
+            Type = TypeEnum.Double;
+            Identifier = Compiler.NewTemp();
+            switch (right.Type)
+            {
+                case TypeEnum.Int:
+                    Compiler.EmitCode($"{Identifier} = sitofp {right.Type.LlvmType()} {right.Identifier}" +
+                                      $" to {Type.LlvmType()}");
+                    break;
+                case TypeEnum.Double:
+                    Identifier = right.Identifier;
+                    return;
+                case TypeEnum.Bool:
+                    Compiler.Error(right.Location, "cannot cast bool to double");
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
+        }
+
+        private void UnaryCastInt()
+        {
+            Type = TypeEnum.Int;
+            Identifier = Compiler.NewTemp();
+            string op;
+            switch (right.Type)
+            {
+                case TypeEnum.Int:
+                    Identifier = right.Identifier;
+                    return;
+                case TypeEnum.Double:
+                    op = "fptosi";
+                    break;
+                case TypeEnum.Bool:
+                    op = "zext";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            Compiler.EmitCode($"{Identifier} = {op} {right.Type.LlvmType()} {right.Identifier} to {Type.LlvmType()}");
+        }
+
+        private void UnaryNegate()
+        {
+            if (right.Type != TypeEnum.Bool)
+            {
+                Compiler.Error(right.Location, "expression must be bool");
+                return;
+            }
+            
+            Type = TypeEnum.Bool;
+            Identifier = Compiler.NewTemp();
+            Compiler.EmitCode($"{Identifier} = xor {TypeEnum.Bool.LlvmType()} {right.Identifier}, 1");
+        }
+
+        private void UnaryBitNegate()
+        {
+            if (right.Type != TypeEnum.Int)
+            {
+                Compiler.Error(right.Location, "expression must be int");
+                return;
+            }
+            
+            Type = TypeEnum.Int;
+            Identifier = Compiler.NewTemp();
+            Compiler.EmitCode($"{Identifier} = xor {TypeEnum.Int.LlvmType()} {right.Identifier}, {Int32.MinValue}");
+        }
+
+        private void UnaryMinus()
+        {
+            if (right.Type == TypeEnum.Bool)
+            {
+                Compiler.Error(right.Location, "expression cannot be bool");
+                return;
+            }
+
+            Type = right.Type;
+            Identifier = Compiler.NewTemp();
+            Compiler.EmitCode(right.Type == TypeEnum.Double
+                                  ? $"{Identifier} = fneg {TypeEnum.Double.LlvmType()} {right.Identifier}"
+                                  : $"{Identifier} = sub {TypeEnum.Int.LlvmType()} 0, {right.Identifier}");
         }
 
         public enum Operation

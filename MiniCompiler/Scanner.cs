@@ -6,9 +6,9 @@
 //
 //  GPLEX Version:  1.2.2
 //  Machine:  DESKTOP-4T5HHDR
-//  DateTime: 2021-06-15 00:02:11
+//  DateTime: 2021-06-16 00:10:04
 //  UserName: Molom
-//  GPLEX input file <Scanner.lex - 2021-06-14 00:45:10>
+//  GPLEX input file <Scanner.lex - 2021-06-15 23:24:15>
 //  GPLEX frame file <embedded resource>
 //
 //  Option settings: parser, minimize
@@ -1019,7 +1019,10 @@ int NextState() {
             switch (currentStart) {
                 case 100:
                 case 105:
-if (blocks > 0) {
+if (parenthesis > 0) {
+                        Error("unclosed parenthesis");
+                    } 
+                    if (blocks > 0) {
                         Error("unclosed block");
                     }
                     return (int)Tokens.Eof;
@@ -1093,13 +1096,13 @@ if (parenthesis > 0) {
                     return (int)Tokens.Endline;
             break;
         case 19:
-return (int)Tokens.Greater;
+return (int)Tokens.Less;
             break;
         case 20:
 return (int)Tokens.Assign;
             break;
         case 21:
-return (int)Tokens.Less;
+return (int)Tokens.Greater;
             break;
         case 22:
         case 23:
@@ -1204,13 +1207,13 @@ return (int)Tokens.Double;
 return (int)Tokens.Bool;
             break;
         case 82:
-return (int)Tokens.LessEqual;
+return (int)Tokens.GreaterEqual;
             break;
         case 83:
 return (int)Tokens.Equal;
             break;
         case 84:
-return (int)Tokens.GreaterEqual;
+return (int)Tokens.LessEqual;
             break;
         case 85:
 yylval.val = yytext; return (int)Tokens.DoubleNumber;
@@ -1252,7 +1255,7 @@ yylval.val = parsedString.ToString();
 parsedString.Append("\\22"); stringLengthModif -= 2;
             break;
         case 97:
-parsedString.Append("\\"); stringLengthModif--;
+parsedString.Append(yytext); stringLengthModif--;
             break;
         case 98:
 parsedString.Append("\\0A"); stringLengthModif -= 2;
@@ -1324,6 +1327,7 @@ yylloc = new LexLocation(tokLin,tokCol,tokELin,tokECol);
 
 private void Error(string text) {
     Console.WriteLine(string.Format("Error ({0},{1}): {2}", yyline, yycol, text));
+    Compiler.Errors++;
 }
 
 private int parenthesis = 0;

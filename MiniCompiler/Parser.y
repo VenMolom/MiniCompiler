@@ -17,11 +17,11 @@
 
 %token Program If Else While Read Write Return Int Double Bool True False Hex
 %token Assign Or And BitOr BitAnd Equal NotEqual Less LessEqual Greater GreaterEqual Plus Minus Multiply Divide Negate BitNegate
-%token OpenPar ClosePar OpenBlock CloseBlock Comma Endline Eof
-%token <val> Ident IntNumber DoubleNumber String Error
+%token OpenPar ClosePar OpenBlock CloseBlock Comma Endline Eof Error
+%token <val> Ident IntNumber DoubleNumber String
 
 %type <tree> programContent declaration instruction output_instruction input_instruction block_instruction conditional_instruction
-%type <tree> loop_instruction exp number logical exp_rest relational additive multiplicative binary unary
+%type <tree> loop_instruction exp number logical exp_rest relational additive multiplicative binary unary program
 %type <type> type
 %type <list> identifiers instructions declarations
 %type <logicalOperation> logical_op
@@ -33,9 +33,8 @@
 %%
 
 start
-    : Program OpenBlock programContent CloseBlock Eof
+    : program Eof
         {
-            Compiler.Program = new Program($3, @$);
             YYACCEPT;
         }
     | error Eof
@@ -44,6 +43,16 @@ start
             yyerrok();
             YYACCEPT;
         }
+    | Eof
+        {
+            Compiler.Error(@1, "syntax error - unexpected end of file");
+            YYACCEPT;
+        }
+    ;
+    
+program
+    : Program OpenBlock programContent CloseBlock
+        { Compiler.Program = new Program($3, @$); }
     ;
     
 programContent
@@ -73,6 +82,11 @@ declarations
 declaration
     : type identifiers Endline
         { $$ = new Declaration($1, $2, @$); }
+    | type identifiers
+        {
+            Compiler.Error(@1);
+            $$ = null;
+        }
     ;
 
 type
@@ -119,17 +133,22 @@ instruction
     | exp Endline
     | Return Endline
         { $$ = new ReturnInstruction(@1); }
+    | exp
+        {
+            Compiler.Error(@1);
+            $$ = null;
+        }
     | error Endline
         {
             Compiler.Error(@1);
             $$ = null;
             yyerrok();
         }
-    | error
+    | error Eof
         {
             Compiler.Error(@1);
-            $$ = null;
             yyerrok();
+            YYACCEPT;
         }
     | Eof
         {
@@ -238,16 +257,23 @@ binary_op
     
 unary
     : unary_op unary
+        { $$ = new UnaryExpression($2, $1, @$); }
     | exp_rest
     ;
     
 unary_op
     : Minus
+        { $$ = UnaryExpression.Operation.Minus; }
     | Negate
+        { $$ = UnaryExpression.Operation.Negate; }
     | BitNegate
+        { $$ = UnaryExpression.Operation.BitNegate; }
     | OpenPar Int ClosePar
+        { $$ = UnaryExpression.Operation.CastInt; }
     | OpenPar Double ClosePar
-    
+        { $$ = UnaryExpression.Operation.CastDouble; }
+    ;
+
 exp_rest
     : Ident
         { $$ = new IdentifierExpression($1, @$); }
