@@ -31,7 +31,7 @@ DoubleNumber    ([1-9][0-9]*|0)\.[0-9]+
 {IntNumber}     { yylval.val = yytext; return (int)Tokens.IntNumber; }
 {HexNumber}     { yylval.val = Convert.ToInt32(yytext, 16).ToString(); return (int)Tokens.IntNumber; }
 {DoubleNumber}  { yylval.val = yytext; return (int)Tokens.DoubleNumber; }
-{Ident}         { yylval.val = "%" + yytext; return (int)Tokens.Ident; }
+{Ident}         { yylval.val = yytext; return (int)Tokens.Ident; }
 
 "="             { return (int)Tokens.Assign; }
 "||"            { return (int)Tokens.Or; }

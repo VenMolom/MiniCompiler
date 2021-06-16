@@ -4,11 +4,11 @@
 
 // GPPG version 1.5.2
 // Machine:  DESKTOP-4T5HHDR
-// DateTime: 2021-06-16 00:10:04
+// DateTime: 2021-06-16 19:21:47
 // UserName: Molom
-// Input file <Parser.y - 2021-06-15 23:58:31>
+// Input file <Parser.y - 2021-06-16 19:09:28>
 
-// options: lines gplex
+// options: lines diagnose & report gplex
 
 using System;
 using System.Collections.Generic;
@@ -29,7 +29,7 @@ public enum Tokens {error=2,EOF=3,Program=4,If=5,Else=6,
     IntNumber=43,DoubleNumber=44,String=45};
 
 public struct ValueType
-#line 6 "Parser.y"
+#line 3 "Parser.y"
        {
     public string val;
     public TypeEnum type;
@@ -300,14 +300,14 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     switch (action)
     {
       case 2: // start -> program, Eof
-#line 37 "Parser.y"
+#line 34 "Parser.y"
         {
             YYAccept();
         }
 #line default
         break;
       case 3: // start -> error, Eof
-#line 41 "Parser.y"
+#line 38 "Parser.y"
         {
             Compiler.Error(LocationStack[LocationStack.Depth-2]);
             yyerrok();
@@ -316,7 +316,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 4: // start -> Eof
-#line 47 "Parser.y"
+#line 44 "Parser.y"
         {
             Compiler.Error(LocationStack[LocationStack.Depth-1], "syntax error - unexpected end of file");
             YYAccept();
@@ -324,32 +324,32 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 5: // program -> Program, OpenBlock, programContent, CloseBlock
-#line 55 "Parser.y"
+#line 52 "Parser.y"
         { Compiler.Program = new Program(ValueStack[ValueStack.Depth-2].tree, CurrentLocationSpan); }
 #line default
         break;
       case 6: // programContent -> declarations, instructions
-#line 60 "Parser.y"
+#line 57 "Parser.y"
         { CurrentSemanticValue.tree = new ProgramContent(ValueStack[ValueStack.Depth-2].list, ValueStack[ValueStack.Depth-1].list, CurrentLocationSpan); }
 #line default
         break;
       case 7: // programContent -> declarations
-#line 62 "Parser.y"
+#line 59 "Parser.y"
         { CurrentSemanticValue.tree = new ProgramContent(ValueStack[ValueStack.Depth-1].list, null, CurrentLocationSpan); }
 #line default
         break;
       case 8: // programContent -> instructions
-#line 64 "Parser.y"
+#line 61 "Parser.y"
         { CurrentSemanticValue.tree = new ProgramContent(null, ValueStack[ValueStack.Depth-1].list, CurrentLocationSpan); }
 #line default
         break;
       case 9: // programContent -> /* empty */
-#line 66 "Parser.y"
+#line 63 "Parser.y"
         { CurrentSemanticValue.tree = new ProgramContent(null, null, CurrentLocationSpan); }
 #line default
         break;
       case 10: // declarations -> declarations, declaration
-#line 71 "Parser.y"
+#line 68 "Parser.y"
         {
             ValueStack[ValueStack.Depth-2].list.Add(ValueStack[ValueStack.Depth-1].tree);
             CurrentSemanticValue.list = ValueStack[ValueStack.Depth-2].list;
@@ -357,7 +357,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 11: // declarations -> declaration
-#line 76 "Parser.y"
+#line 73 "Parser.y"
         {
             CurrentSemanticValue.list = new List<SyntaxTree>();
             CurrentSemanticValue.list.Add(ValueStack[ValueStack.Depth-1].tree);
@@ -365,35 +365,35 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 12: // declaration -> type, identifiers, Endline
-#line 84 "Parser.y"
+#line 81 "Parser.y"
         { CurrentSemanticValue.tree = new Declaration(ValueStack[ValueStack.Depth-3].type, ValueStack[ValueStack.Depth-2].list, CurrentLocationSpan); }
 #line default
         break;
       case 13: // declaration -> type, identifiers
-#line 86 "Parser.y"
+#line 83 "Parser.y"
         {
-            Compiler.Error(LocationStack[LocationStack.Depth-2]);
+            Compiler.Error(LocationStack[LocationStack.Depth-2], "missing semicolon");
             CurrentSemanticValue.tree = null;
         }
 #line default
         break;
       case 14: // type -> Int
-#line 94 "Parser.y"
+#line 91 "Parser.y"
         { CurrentSemanticValue.type = TypeEnum.Int; }
 #line default
         break;
       case 15: // type -> Double
-#line 96 "Parser.y"
+#line 93 "Parser.y"
         { CurrentSemanticValue.type = TypeEnum.Double; }
 #line default
         break;
       case 16: // type -> Bool
-#line 98 "Parser.y"
+#line 95 "Parser.y"
         { CurrentSemanticValue.type = TypeEnum.Bool; }
 #line default
         break;
       case 17: // identifiers -> identifiers, Comma, Ident
-#line 103 "Parser.y"
+#line 100 "Parser.y"
         {
             ValueStack[ValueStack.Depth-3].list.Add(new Identifier(ValueStack[ValueStack.Depth-1].val, LocationStack[LocationStack.Depth-1]));
             CurrentSemanticValue.list = ValueStack[ValueStack.Depth-3].list;
@@ -401,7 +401,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 18: // identifiers -> Ident
-#line 108 "Parser.y"
+#line 105 "Parser.y"
         {
             CurrentSemanticValue.list = new List<SyntaxTree>();
             CurrentSemanticValue.list.Add(new Identifier(ValueStack[ValueStack.Depth-1].val, LocationStack[LocationStack.Depth-1]));
@@ -409,7 +409,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 19: // instructions -> instructions, instruction
-#line 116 "Parser.y"
+#line 113 "Parser.y"
         {
             ValueStack[ValueStack.Depth-2].list.Add(ValueStack[ValueStack.Depth-1].tree);
             CurrentSemanticValue.list = ValueStack[ValueStack.Depth-2].list;
@@ -417,7 +417,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 20: // instructions -> instruction
-#line 121 "Parser.y"
+#line 118 "Parser.y"
         {
             CurrentSemanticValue.list = new List<SyntaxTree>();
             CurrentSemanticValue.list.Add(ValueStack[ValueStack.Depth-1].tree);
@@ -425,20 +425,20 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 27: // instruction -> Return, Endline
-#line 135 "Parser.y"
+#line 132 "Parser.y"
         { CurrentSemanticValue.tree = new ReturnInstruction(LocationStack[LocationStack.Depth-2]); }
 #line default
         break;
       case 28: // instruction -> exp
-#line 137 "Parser.y"
+#line 134 "Parser.y"
         {
-            Compiler.Error(LocationStack[LocationStack.Depth-1]);
+            Compiler.Error(LocationStack[LocationStack.Depth-1], "missing semicolon");
             CurrentSemanticValue.tree = null;
         }
 #line default
         break;
       case 29: // instruction -> error, Endline
-#line 142 "Parser.y"
+#line 139 "Parser.y"
         {
             Compiler.Error(LocationStack[LocationStack.Depth-2]);
             CurrentSemanticValue.tree = null;
@@ -447,7 +447,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 30: // instruction -> error, Eof
-#line 148 "Parser.y"
+#line 145 "Parser.y"
         {
             Compiler.Error(LocationStack[LocationStack.Depth-2]);
             yyerrok();
@@ -456,7 +456,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 31: // instruction -> Eof
-#line 154 "Parser.y"
+#line 151 "Parser.y"
         {
             Compiler.Error(LocationStack[LocationStack.Depth-1], "syntax error - unexpected end of file");
             YYAbort();
@@ -464,213 +464,213 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
 #line default
         break;
       case 32: // conditional_instruction -> If, OpenPar, exp, ClosePar, instruction
-#line 162 "Parser.y"
+#line 159 "Parser.y"
         { CurrentSemanticValue.tree = new ConditionalInstruction(ValueStack[ValueStack.Depth-3].tree, ValueStack[ValueStack.Depth-1].tree, CurrentLocationSpan); }
 #line default
         break;
       case 33: // conditional_instruction -> If, OpenPar, exp, ClosePar, instruction, Else, 
                //                            instruction
-#line 164 "Parser.y"
+#line 161 "Parser.y"
         { CurrentSemanticValue.tree = new ConditionalInstruction(ValueStack[ValueStack.Depth-5].tree, ValueStack[ValueStack.Depth-3].tree, ValueStack[ValueStack.Depth-1].tree, CurrentLocationSpan); }
 #line default
         break;
       case 34: // loop_instruction -> While, OpenPar, exp, ClosePar, instruction
-#line 169 "Parser.y"
+#line 166 "Parser.y"
         { CurrentSemanticValue.tree = new LoopInstruction(ValueStack[ValueStack.Depth-3].tree, ValueStack[ValueStack.Depth-1].tree, CurrentLocationSpan); }
 #line default
         break;
       case 35: // block_instruction -> OpenBlock, instructions, CloseBlock
-#line 174 "Parser.y"
+#line 171 "Parser.y"
         { CurrentSemanticValue.tree = new BlockInstruction(ValueStack[ValueStack.Depth-2].list, CurrentLocationSpan); }
 #line default
         break;
       case 36: // block_instruction -> OpenBlock, CloseBlock
-#line 176 "Parser.y"
+#line 173 "Parser.y"
         { CurrentSemanticValue.tree = null; }
 #line default
         break;
       case 37: // exp -> Ident, Assign, exp
-#line 181 "Parser.y"
+#line 178 "Parser.y"
         { CurrentSemanticValue.tree = new AssignmentExpression(ValueStack[ValueStack.Depth-3].val, ValueStack[ValueStack.Depth-1].tree, CurrentLocationSpan); }
 #line default
         break;
       case 39: // logical -> logical, logical_op, relational
-#line 187 "Parser.y"
+#line 184 "Parser.y"
         { CurrentSemanticValue.tree = new LogicalExpression(ValueStack[ValueStack.Depth-3].tree, ValueStack[ValueStack.Depth-1].tree, ValueStack[ValueStack.Depth-2].logicalOperation, CurrentLocationSpan); }
 #line default
         break;
       case 41: // logical_op -> And
-#line 193 "Parser.y"
+#line 190 "Parser.y"
         { CurrentSemanticValue.logicalOperation = LogicalExpression.Operation.And; }
 #line default
         break;
       case 42: // logical_op -> Or
-#line 195 "Parser.y"
+#line 192 "Parser.y"
         { CurrentSemanticValue.logicalOperation = LogicalExpression.Operation.Or; }
 #line default
         break;
       case 43: // relational -> relational, relational_op, additive
-#line 200 "Parser.y"
+#line 197 "Parser.y"
         { CurrentSemanticValue.tree = new RelationalExpression(ValueStack[ValueStack.Depth-3].tree, ValueStack[ValueStack.Depth-1].tree, ValueStack[ValueStack.Depth-2].relationalOperation, CurrentLocationSpan); }
 #line default
         break;
       case 45: // relational_op -> Equal
-#line 206 "Parser.y"
+#line 203 "Parser.y"
         { CurrentSemanticValue.relationalOperation = RelationalExpression.Operation.Equal; }
 #line default
         break;
       case 46: // relational_op -> NotEqual
-#line 208 "Parser.y"
+#line 205 "Parser.y"
         { CurrentSemanticValue.relationalOperation = RelationalExpression.Operation.NotEqual; }
 #line default
         break;
       case 47: // relational_op -> Less
-#line 210 "Parser.y"
+#line 207 "Parser.y"
         { CurrentSemanticValue.relationalOperation = RelationalExpression.Operation.Less; }
 #line default
         break;
       case 48: // relational_op -> LessEqual
-#line 212 "Parser.y"
+#line 209 "Parser.y"
         { CurrentSemanticValue.relationalOperation = RelationalExpression.Operation.LessEqual; }
 #line default
         break;
       case 49: // relational_op -> Greater
-#line 214 "Parser.y"
+#line 211 "Parser.y"
         { CurrentSemanticValue.relationalOperation = RelationalExpression.Operation.Greater; }
 #line default
         break;
       case 50: // relational_op -> GreaterEqual
-#line 216 "Parser.y"
+#line 213 "Parser.y"
         { CurrentSemanticValue.relationalOperation = RelationalExpression.Operation.GreaterEqual; }
 #line default
         break;
       case 51: // additive -> additive, additive_op, multiplicative
-#line 221 "Parser.y"
+#line 218 "Parser.y"
         { CurrentSemanticValue.tree = new ArithmeticExpression(ValueStack[ValueStack.Depth-3].tree, ValueStack[ValueStack.Depth-1].tree, ValueStack[ValueStack.Depth-2].arithmeticOperation, CurrentLocationSpan); }
 #line default
         break;
       case 53: // additive_op -> Plus
-#line 227 "Parser.y"
+#line 224 "Parser.y"
         { CurrentSemanticValue.arithmeticOperation = ArithmeticExpression.Operation.Addition; }
 #line default
         break;
       case 54: // additive_op -> Minus
-#line 229 "Parser.y"
+#line 226 "Parser.y"
         { CurrentSemanticValue.arithmeticOperation = ArithmeticExpression.Operation.Subtraction; }
 #line default
         break;
       case 55: // multiplicative -> multiplicative, multiplicative_op, binary
-#line 234 "Parser.y"
+#line 231 "Parser.y"
         { CurrentSemanticValue.tree = new ArithmeticExpression(ValueStack[ValueStack.Depth-3].tree, ValueStack[ValueStack.Depth-1].tree, ValueStack[ValueStack.Depth-2].arithmeticOperation, CurrentLocationSpan); }
 #line default
         break;
       case 57: // multiplicative_op -> Multiply
-#line 240 "Parser.y"
+#line 237 "Parser.y"
         { CurrentSemanticValue.arithmeticOperation = ArithmeticExpression.Operation.Multiplication; }
 #line default
         break;
       case 58: // multiplicative_op -> Divide
-#line 242 "Parser.y"
+#line 239 "Parser.y"
         { CurrentSemanticValue.arithmeticOperation = ArithmeticExpression.Operation.Division; }
 #line default
         break;
       case 59: // binary -> binary, binary_op, unary
-#line 247 "Parser.y"
+#line 244 "Parser.y"
         { CurrentSemanticValue.tree = new BinaryExpression(ValueStack[ValueStack.Depth-3].tree, ValueStack[ValueStack.Depth-1].tree, ValueStack[ValueStack.Depth-2].binaryOperation, CurrentLocationSpan); }
 #line default
         break;
       case 61: // binary_op -> BitAnd
-#line 253 "Parser.y"
+#line 250 "Parser.y"
         { CurrentSemanticValue.binaryOperation = BinaryExpression.Operation.And; }
 #line default
         break;
       case 62: // binary_op -> BitOr
-#line 255 "Parser.y"
+#line 252 "Parser.y"
         { CurrentSemanticValue.binaryOperation = BinaryExpression.Operation.Or; }
 #line default
         break;
       case 63: // unary -> unary_op, unary
-#line 260 "Parser.y"
+#line 257 "Parser.y"
         { CurrentSemanticValue.tree = new UnaryExpression(ValueStack[ValueStack.Depth-1].tree, ValueStack[ValueStack.Depth-2].unaryOperation, CurrentLocationSpan); }
 #line default
         break;
       case 65: // unary_op -> Minus
-#line 266 "Parser.y"
+#line 263 "Parser.y"
         { CurrentSemanticValue.unaryOperation = UnaryExpression.Operation.Minus; }
 #line default
         break;
       case 66: // unary_op -> Negate
-#line 268 "Parser.y"
+#line 265 "Parser.y"
         { CurrentSemanticValue.unaryOperation = UnaryExpression.Operation.Negate; }
 #line default
         break;
       case 67: // unary_op -> BitNegate
-#line 270 "Parser.y"
+#line 267 "Parser.y"
         { CurrentSemanticValue.unaryOperation = UnaryExpression.Operation.BitNegate; }
 #line default
         break;
       case 68: // unary_op -> OpenPar, Int, ClosePar
-#line 272 "Parser.y"
+#line 269 "Parser.y"
         { CurrentSemanticValue.unaryOperation = UnaryExpression.Operation.CastInt; }
 #line default
         break;
       case 69: // unary_op -> OpenPar, Double, ClosePar
-#line 274 "Parser.y"
+#line 271 "Parser.y"
         { CurrentSemanticValue.unaryOperation = UnaryExpression.Operation.CastDouble; }
 #line default
         break;
       case 70: // exp_rest -> Ident
-#line 279 "Parser.y"
+#line 276 "Parser.y"
         { CurrentSemanticValue.tree = new IdentifierExpression(ValueStack[ValueStack.Depth-1].val, CurrentLocationSpan); }
 #line default
         break;
       case 71: // exp_rest -> OpenPar, exp, ClosePar
-#line 281 "Parser.y"
+#line 278 "Parser.y"
         { CurrentSemanticValue.tree = ValueStack[ValueStack.Depth-2].tree; }
 #line default
         break;
       case 73: // number -> IntNumber
-#line 287 "Parser.y"
+#line 284 "Parser.y"
         { CurrentSemanticValue.tree = new NumberExpression(ValueStack[ValueStack.Depth-1].val, TypeEnum.Int, CurrentLocationSpan); }
 #line default
         break;
       case 74: // number -> DoubleNumber
-#line 289 "Parser.y"
+#line 286 "Parser.y"
         { CurrentSemanticValue.tree = new NumberExpression(ValueStack[ValueStack.Depth-1].val, TypeEnum.Double, CurrentLocationSpan); }
 #line default
         break;
       case 75: // number -> True
-#line 291 "Parser.y"
+#line 288 "Parser.y"
         { CurrentSemanticValue.tree = new NumberExpression("1", TypeEnum.Bool, CurrentLocationSpan); }
 #line default
         break;
       case 76: // number -> False
-#line 293 "Parser.y"
+#line 290 "Parser.y"
         { CurrentSemanticValue.tree = new NumberExpression("0", TypeEnum.Bool, CurrentLocationSpan); }
 #line default
         break;
       case 77: // output_instruction -> Write, exp, Endline
-#line 298 "Parser.y"
+#line 295 "Parser.y"
         { CurrentSemanticValue.tree = new OutputInstruction(ValueStack[ValueStack.Depth-2].tree, OutputInstruction.Flag.None, CurrentLocationSpan); }
 #line default
         break;
       case 78: // output_instruction -> Write, exp, Comma, Hex, Endline
-#line 300 "Parser.y"
+#line 297 "Parser.y"
         { CurrentSemanticValue.tree = new OutputInstruction(ValueStack[ValueStack.Depth-4].tree, OutputInstruction.Flag.Hex, CurrentLocationSpan); }
 #line default
         break;
       case 79: // output_instruction -> Write, String, Endline
-#line 302 "Parser.y"
+#line 299 "Parser.y"
         { CurrentSemanticValue.tree = new OutputInstruction(ValueStack[ValueStack.Depth-2].val, CurrentLocationSpan); }
 #line default
         break;
       case 80: // input_instruction -> Read, Ident, Endline
-#line 307 "Parser.y"
+#line 304 "Parser.y"
         { CurrentSemanticValue.tree = new InputInstruction(new Identifier(ValueStack[ValueStack.Depth-2].val, LocationStack[LocationStack.Depth-2]), false, CurrentLocationSpan); }
 #line default
         break;
       case 81: // input_instruction -> Read, Ident, Comma, Hex, Endline
-#line 309 "Parser.y"
+#line 306 "Parser.y"
         { CurrentSemanticValue.tree = new InputInstruction(new Identifier(ValueStack[ValueStack.Depth-4].val, LocationStack[LocationStack.Depth-4]), true, CurrentLocationSpan); }
 #line default
         break;
@@ -688,7 +688,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         return CharToString((char)terminal);
   }
 
-#line 313 "Parser.y"
+#line 310 "Parser.y"
 
 public Parser(Scanner scanner) : base(scanner) { }
 #line default

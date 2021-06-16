@@ -6,9 +6,9 @@
 //
 //  GPLEX Version:  1.2.2
 //  Machine:  DESKTOP-4T5HHDR
-//  DateTime: 2021-06-16 00:10:04
+//  DateTime: 2021-06-16 19:21:46
 //  UserName: Molom
-//  GPLEX input file <Scanner.lex - 2021-06-15 23:24:15>
+//  GPLEX input file <Scanner.lex - 2021-06-16 12:57:51>
 //  GPLEX frame file <embedded resource>
 //
 //  Option settings: parser, minimize
@@ -1146,7 +1146,7 @@ return (int)Tokens.Greater;
         case 77:
         case 79:
         case 80:
-yylval.val = "%" + yytext; return (int)Tokens.Ident;
+yylval.val = yytext; return (int)Tokens.Ident;
             break;
         case 33:
 blocks++; return (int)Tokens.OpenBlock;

@@ -7,18 +7,22 @@ namespace MiniCompiler
 { 
     public static class Compiler
     {
-        public static readonly Dictionary<string, TypeEnum> Symbols = new Dictionary<string, TypeEnum>();
+        public static readonly Dictionary<string, (string ident, TypeEnum type)> Symbols =
+            new Dictionary<string, (string ident, TypeEnum type)>();
         public static readonly Dictionary<string, (string ident, int length)> StringLiterals =
             new Dictionary<string, (string, int)>();
         public static SyntaxTree Program = null;
         public static int Errors = 0;
 
+        public static string RootLabel = "0";
+
         private static StreamWriter sw;
         private static int temps = 0;
+        private static int literals = 0;
 
         public static int Main(string[] args)
         {
-            Console.WriteLine("\nMini Language Compiler");
+            Console.WriteLine("\nMini Language Compiler\n");
 
             string file;
             FileStream source;
@@ -28,7 +32,7 @@ namespace MiniCompiler
             }
             else
             {
-                Console.Write("\nsource file:  ");
+                Console.Write("source file: ");
                 file = Console.ReadLine();
             }
             
@@ -38,7 +42,7 @@ namespace MiniCompiler
             }
             catch (Exception e)
             {
-                Console.WriteLine("\n" + e.Message);
+                Console.WriteLine(e.Message);
                 return 1;
             }
             
@@ -47,22 +51,19 @@ namespace MiniCompiler
             
             sw = new StreamWriter(file + ".ll");
 
-            // try
-            // {
+            try
+            {
                 parser.Parse();
-            // }
-            // catch
-            // {
-            //     sw.Close();
-            //     source.Close();
-            //     Console.WriteLine($"\n{Errors} Errors detected\n");
-            //     File.Delete(file + ".ll");
-            //     return 2;
-            // }
-            if (Errors == 0 && Program != null)
-            {   
-                GenProlog();
-                Program.GenerateCode();
+                if (Errors == 0 && Program != null)
+                {   
+                    GenProlog();
+                    Program.GenerateCode();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Unexpected error occured:\n {e.Message}");
+                Errors++;
             }
             
             sw.Close();
@@ -70,19 +71,21 @@ namespace MiniCompiler
             
             if (Errors != 0 || Program == null)
             {
-                if (Program == null)
+                if (Program == null && Errors == 0)
                 {
-                    Console.WriteLine($"\nProgram keyword not found\n");
+                    Console.WriteLine("Program keyword not found");
                 }
                 
                 if (Errors != 0)
                 {
-                    Console.WriteLine($"\n{Errors} Errors detected\n");
+                    Console.WriteLine($"{Errors} Errors detected");
                 }
 
                 File.Delete(file + ".ll");
                 return 2;
             }
+            
+            Console.WriteLine("Compilation successful");
             return 0;
         }
 
@@ -90,6 +93,11 @@ namespace MiniCompiler
         {
             var prefix = label ? string.Empty : "%";
             return $"{prefix}__{++temps}";
+        }
+        
+        public static string NewLiteral()
+        {
+            return $".str.{++literals}";
         }
 
         public static void EmitCode(string instr = null)
@@ -107,7 +115,7 @@ namespace MiniCompiler
         {
             if (!StringLiterals.ContainsKey(literal))
             {
-                StringLiterals.Add(literal, (NewTemp(true), literal.Length + lengthModif + 1));
+                StringLiterals.Add(literal, (NewLiteral(), literal.Length + lengthModif + 1));
             }
         }
 
@@ -164,6 +172,8 @@ namespace MiniCompiler
         public LexLocation Location { get; }
         public TypeEnum Type { get; set; }
         public string Identifier { get; set; }
+        
+        public string ExitLabel { get; set; }
 
         protected SyntaxTree(LexLocation location)
         {
@@ -199,7 +209,7 @@ namespace MiniCompiler
         
         public override void GenerateCode()
         {
-            Compiler.EmitCode("define i32 @main()");
+            Compiler.EmitCode("define i32 @main() #0");
             Compiler.EmitCode("{");
             Compiler.EmitCode();
             content?.GenerateCode();
@@ -262,9 +272,10 @@ namespace MiniCompiler
                 Compiler.Error(location, "variable already declared");
                 return;
             }
-    
-            Compiler.Symbols.Add(identifier, type);
-            Compiler.EmitCode($"{identifier} = alloca {type.LlvmType()}");
+
+            var ident = Compiler.NewTemp();
+            Compiler.Symbols.Add(identifier, (ident, type));
+            Compiler.EmitCode($"{ident} = alloca {type.LlvmType()}");
         }
     }
     
@@ -316,12 +327,15 @@ namespace MiniCompiler
             
             Compiler.EmitCode($"br i1 {condition.Identifier}, label %{truelab}, label %{falselab}");
             Compiler.EmitCode($"{truelab}:");
+            Compiler.RootLabel = truelab;
             thenInstruction?.GenerateCode();
             Compiler.EmitCode($"br label %{endlab}");
             Compiler.EmitCode($"{falselab}:");
+            Compiler.RootLabel = falselab;
             elseInstruction?.GenerateCode();
             Compiler.EmitCode($"br label %{endlab}");
             Compiler.EmitCode($"{endlab}:");
+            Compiler.RootLabel = endlab;
         }
     }
     
@@ -344,6 +358,7 @@ namespace MiniCompiler
             
             Compiler.EmitCode($"br label %{startlab}");
             Compiler.EmitCode($"{startlab}:");
+            Compiler.RootLabel = startlab;
             condition.GenerateCode();
             
             if (condition.Type != TypeEnum.Bool)
@@ -354,9 +369,11 @@ namespace MiniCompiler
             
             Compiler.EmitCode($"br i1 {condition.Identifier}, label %{innerlab}, label %{endlab}");
             Compiler.EmitCode($"{innerlab}:");
+            Compiler.RootLabel = innerlab;
             instruction?.GenerateCode();
             Compiler.EmitCode($"br label %{startlab}");
             Compiler.EmitCode($"{endlab}:");
+            Compiler.RootLabel = endlab;
         }
     }
     
@@ -450,6 +467,7 @@ namespace MiniCompiler
             Compiler.EmitCode("call i32 (i8*, ...) @printf(i8* bitcast ([6 x i8]* @false to i8*))");
             Compiler.EmitCode($"br label %{endlab}");
             Compiler.EmitCode($"{endlab}:");
+            Compiler.RootLabel = endlab;
         }
 
         private void PrintString(string identifier, int length)
@@ -483,7 +501,7 @@ namespace MiniCompiler
                 return;
             }
 
-            var type = Compiler.Symbols[identifier.Identifier];
+            var (ident, type) = Compiler.Symbols[identifier.Identifier];
             if (hex)
             {
                 if (type != TypeEnum.Int)
@@ -492,7 +510,7 @@ namespace MiniCompiler
                     return;
                 }
                 
-                Read(TypeEnum.Int.LlvmType(), 3, "hexread");
+                Read(ident, TypeEnum.Int.LlvmType(), 3, "hexread");
             }
             
             if (type == TypeEnum.Bool)
@@ -502,14 +520,14 @@ namespace MiniCompiler
             }
             
             var length = type == TypeEnum.Double ? 4 : 3;
-            Read(type.LlvmType(), length);
+            Read(ident, type.LlvmType(), length);
         }
         
-        private void Read(string type, int length, string format = null)
+        private void Read(string ident, string type, int length, string format = null)
         {
             Compiler.EmitCode($"call i32 (i8*, ...) @scanf(i8* bitcast ([{length} x i8]* " +
                               $"@{format ?? type} to i8*)" +
-                              $", {type}* {identifier.Identifier})");
+                              $", {type}* {ident})");
         }
     }
 
@@ -530,9 +548,10 @@ namespace MiniCompiler
                 return;
             }
 
-            Type = Compiler.Symbols[identifier];
+            string ident;
+            (ident, Type) = Compiler.Symbols[identifier];
             Identifier = Compiler.NewTemp();
-            Load(identifier);
+            Load(ident);
         }
     }
     
@@ -557,7 +576,8 @@ namespace MiniCompiler
                 return;
             }
 
-            Type = Compiler.Symbols[identifier];
+            string ident;
+            (ident, Type) = Compiler.Symbols[identifier];
             switch (Type)
             {
                 case TypeEnum.Bool when expression.Type != TypeEnum.Bool:
@@ -578,12 +598,12 @@ namespace MiniCompiler
                 var tmp = Compiler.NewTemp();
                 Identifier = tmp;
                 Cast(expression.Identifier, expression.Type);
-                Store(identifier);
+                Store(ident);
             }
             else
             {
                 Identifier = expression.Identifier;
-                Store(identifier);
+                Store(ident);
             }
         }
         
@@ -630,37 +650,41 @@ namespace MiniCompiler
             }
 
             var rightlab = Compiler.NewTemp(true);
-            var leftlab = Compiler.NewTemp(true);
             var endlab = Compiler.NewTemp(true);
 
-            Identifier = Compiler.NewTemp();
+            var enterLabel = Compiler.RootLabel;
+            ExitLabel = endlab;
+            
             Type = TypeEnum.Bool;
             switch (operation)
             {
                 case Operation.And:
-                    Compiler.EmitCode($"br i1 {left.Identifier}, label %{rightlab}, label %{leftlab}");
-                    Compiler.EmitCode($"{leftlab}:");
-                    Compiler.EmitCode($"br label %{endlab}");
+                    Compiler.EmitCode($"br i1 {left.Identifier}, label %{rightlab}, label %{endlab}");
                     Compiler.EmitCode($"{rightlab}:");
+                    Compiler.RootLabel = rightlab;
                     right.GenerateCode();
                     Compiler.EmitCode($"br label %{endlab}");
                     Compiler.EmitCode($"{endlab}:");
-                    Compiler.EmitCode($"{Identifier} = phi i1 [ 0, %{leftlab}], [{right.Identifier}, %{rightlab}]");
+                    Identifier = Compiler.NewTemp();
+                    Compiler.EmitCode($"{Identifier} = phi i1 [0, %{enterLabel}], " +
+                                      $"[{right.Identifier}, %{right.ExitLabel ?? rightlab}]");
                     break;
                 case Operation.Or:
-                    Compiler.EmitCode($"br i1 {left.Identifier}, label %{leftlab}, label %{rightlab}");
-                    Compiler.EmitCode($"{leftlab}:");
-                    Compiler.EmitCode($"br label %{endlab}");
+                    Compiler.EmitCode($"br i1 {left.Identifier}, label %{endlab}, label %{rightlab}");
                     Compiler.EmitCode($"{rightlab}:");
+                    Compiler.RootLabel = rightlab;
                     right.GenerateCode();
                     Compiler.EmitCode($"br label %{endlab}");
                     Compiler.EmitCode($"{endlab}:");
-                    Compiler.EmitCode($"{Identifier} = phi i1 [ 1, %{leftlab}], [{right.Identifier}, %{rightlab}]");
+                    Identifier = Compiler.NewTemp();
+                    Compiler.EmitCode($"{Identifier} = phi i1 [1, %{enterLabel}]," +
+                                      $" [{right.Identifier}, %{right.ExitLabel ?? rightlab}]");
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
             
+            Compiler.RootLabel = endlab;
             if (right.Type != TypeEnum.Bool)
             {
                 Compiler.Error(right.Location, "expression is not of type bool");
@@ -1070,7 +1094,7 @@ namespace MiniCompiler
             
             Type = TypeEnum.Int;
             Identifier = Compiler.NewTemp();
-            Compiler.EmitCode($"{Identifier} = xor {TypeEnum.Int.LlvmType()} {right.Identifier}, {Int32.MinValue}");
+            Compiler.EmitCode($"{Identifier} = xor {TypeEnum.Int.LlvmType()} {right.Identifier}, -1");
         }
 
         private void UnaryMinus()

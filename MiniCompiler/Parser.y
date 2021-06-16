@@ -1,6 +1,3 @@
-
-// Uwaga: W wywołaniu generatora gppg należy użyć opcji /gplex
-
 %namespace MiniCompiler
 
 %union {
@@ -84,7 +81,7 @@ declaration
         { $$ = new Declaration($1, $2, @$); }
     | type identifiers
         {
-            Compiler.Error(@1);
+            Compiler.Error(@1, "missing semicolon");
             $$ = null;
         }
     ;
@@ -135,7 +132,7 @@ instruction
         { $$ = new ReturnInstruction(@1); }
     | exp
         {
-            Compiler.Error(@1);
+            Compiler.Error(@1, "missing semicolon");
             $$ = null;
         }
     | error Endline

@@ -1,2 +1,2 @@
 .\Gplex.exe Scanner.lex
-.\Gppg.exe /gplex /verbose Parser.y > Parser.cs
+.\Gppg.exe /gplex /verbose /report Parser.y > Parser.cs
